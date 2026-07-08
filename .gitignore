@@ -1,0 +1,5 @@
+node_modules/
+andon_state.json
+dist/
+build/
+*.exe

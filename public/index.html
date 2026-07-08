@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InPost Andon | System Produkcyjny</title>
+    
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+:root {
+            --col-yellow: #FFCC00; 
+            --col-yellow-deep: #E6B800;
+            --col-bg: #0A0A0B; 
+            --col-card: #18191B; 
+            --col-text: #F5F5F3;
+            --col-muted: #9A9C9F;
+            --border-color: #28292C;
+            --input-bg: rgba(255,255,255,0.035);
+            
+            --status-ok: #2E9E4F; 
+            --status-nok: #E5484D; 
+            --status-warn: #F57C00; 
+            --teams-col: #5b5fc7;
+
+            --font-display: 'Space Grotesk', 'Inter', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+
+            --ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
+            --shadow-soft: 0 8px 24px rgba(0,0,0,0.28);
+            --shadow-hover: 0 16px 40px rgba(0,0,0,0.45);
+            --glow-yellow: 0 0 0 3px rgba(255,204,0,0.18);
+            
+            /* NOWOŚĆ: Siatka dopasowująca się do motywu */
+            --grid-line: rgba(255,255,255,0.028); 
+        }
+
+        [data-theme="light"] {
+            --col-bg: #F3F2ED; 
+            --col-card: #FFFFFF; 
+            --col-text: #17181A;
+            --col-muted: #6B6D70;
+            --border-color: #E3E1D9;
+            --input-bg: #F9F8F4;
+            --shadow-soft: 0 8px 24px rgba(23,24,26,0.08);
+            --shadow-hover: 0 16px 40px rgba(23,24,26,0.14);
+            
+            /* NOWOŚĆ: Ciemniejsza siatka dla jasnego tła */
+            --grid-line: rgba(0,0,0,0.05); 
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+        body { margin: 0; font-family: var(--font-body); background-color: var(--col-bg); color: var(--col-text); min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; transition: background-color 0.3s, color 0.3s; position: relative;}
+        .hidden { display: none !important; }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes ledPulse { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; } 50% { opacity: 0.55; box-shadow: 0 0 0 4px transparent; } }
+        @keyframes gridDrift { from { background-position: 0 0; } to { background-position: 64px 64px; } }
+        @keyframes logoPop { 0% { opacity: 0; transform: scale(0.85); } 100% { opacity: 1; transform: scale(1); } }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+        }
+
+        #global-logo {
+            position: absolute;
+            top: clamp(0.6rem, 1.4vw, 1rem);
+            right: clamp(1rem, 2vw, 1.75rem);
+            height: clamp(44px, 5vw, 72px);
+            width: auto;
+            z-index: 2000;
+            pointer-events: none;
+            filter: drop-shadow(0 2px 10px rgba(0,0,0,0.25));
+        }
+
+        body:has(#view-login:not(.hidden)) #global-logo { display: none !important; }
+
+
+    /* --- EKRAN LOGOWANIA --- */
+        #view-login {
+            position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center;
+            background:
+                radial-gradient(ellipse at 50% -10%, rgba(255,204,0,0.12), transparent 60%),
+                repeating-linear-gradient(0deg, var(--grid-line) 0px, var(--grid-line) 1px, transparent 1px, transparent 32px),
+                repeating-linear-gradient(90deg, var(--grid-line) 0px, var(--grid-line) 1px, transparent 1px, transparent 32px),
+                var(--col-bg);
+            background-size: auto, 32px 32px, 32px 32px, auto;
+            animation: fadeIn 0.5s ease-out;
+            padding: 1rem;
+        }
+        .login-panel { width: 100%; max-width: 420px; padding: clamp(2rem, 5vw, 3rem) clamp(1.5rem, 5vw, 2.5rem); background: transparent; text-align: center; animation: fadeInUp 0.7s var(--ease-smooth); }
+        .login-logo { display: block; margin: 0 auto 1.5rem auto; height: 70px; width: auto; max-width: 100%; object-fit: contain; animation: logoPop 0.6s var(--ease-smooth) both; }
+        .login-panel h1 { font-family: var(--font-display); font-weight: 700; font-size: 2.2rem; color: var(--col-yellow); margin: 0 0 0.5rem 0; letter-spacing: -0.5px; }
+        .login-panel p { color: var(--col-muted); font-size: 0.95rem; margin-bottom: 2.5rem; font-weight: 500; }
+        .input-group { margin-bottom: 1.5rem; text-align: left; }
+        .input-group label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--col-muted); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; }
+        
+        /* ZMIANA: Tła inputów reagują teraz na jasny motyw */
+        .inp-login, .custom-select-trigger { width: 100%; padding: 1.2rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--col-text); font-family: inherit; font-size: 1.05rem; font-weight: 500; border-radius: var(--radius-sm); transition: all 0.25s var(--ease-smooth); }
+        .inp-login:focus, .custom-select-wrapper.open .custom-select-trigger { border-color: var(--col-yellow); outline: none; background: var(--col-bg); box-shadow: var(--glow-yellow); }
+        .inp-login::placeholder { color: var(--col-muted); opacity: 0.7; }
+
+        .custom-select-wrapper { position: relative; width: 100%; font-family: inherit; }
+        .custom-select-trigger { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .custom-select-trigger .trigger-content { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 1rem; }
+        .custom-select-trigger i.arrow { transition: transform 0.3s ease; color: var(--col-muted); }
+        .custom-select-wrapper.open i.arrow { transform: rotate(180deg); }
+        .custom-options { position: absolute; top: calc(100% + 8px); left: 0; width: 100%; background: var(--col-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-hover); z-index: 1000; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s var(--ease-smooth); }
+        .custom-select-wrapper.open .custom-options { opacity: 1; visibility: visible; transform: translateY(0); }
+        .custom-options::-webkit-scrollbar { display: none; }
+        .custom-options { -ms-overflow-style: none; scrollbar-width: none; max-height: 35vh; overflow-y: auto; }
+        .custom-option { display: flex; align-items: center; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid var(--border-color); padding: 8px 16px; gap: 12px; }
+        .custom-option:last-child { border-bottom: none; }
+        .custom-option:hover { background: var(--input-bg); }
+        .custom-option.selected { background: rgba(255, 204, 0, 0.1); }
+        .custom-option .opt-icon { font-size: 1.3rem; color: var(--col-muted); }
+        .custom-option .opt-text { display: flex; flex-direction: column; text-align: left; }
+        .custom-option .opt-title { font-size: 0.95rem; font-weight: 700; color: var(--col-text); }
+        .custom-option .opt-sub { font-size: 0.75rem; font-weight: 500; color: var(--col-muted); margin-top: 2px;}
+
+        /* --- TV DASHBOARD --- */
+        #view-tv { display: flex; flex-direction: column; min-height: 100vh; animation: fadeIn 0.4s ease-out; position: relative; }
+        .tv-main { flex: 1; display: flex; flex-direction: column; padding: clamp(1rem, 3vw, 2.5rem); min-width: 0; }
+        
+        /* Metryki wyśrodkowane w pasku (margin:0 auto na .kpi-wrapper); padding-right rezerwuje miejsce na powiększone logo. */
+        .tv-top-bar { display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: flex-end; gap: 1.5rem; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); position: relative; padding-right: clamp(140px, 13vw, 190px);}
+        
+        .title-main { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 4vw, 2.8rem); color: var(--col-text); line-height: 1; letter-spacing: -0.5px; display: flex; align-items: center; gap: 15px;}
+        
+        .kpi-wrapper { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center; gap: clamp(1rem, 3vw, 4rem); margin: 0 auto; }
+        .kpi-unit { text-align: left; }
+        @media (min-width: 768px) { .kpi-unit { text-align: right; } }
+        .kpi-lbl { font-size: clamp(0.7rem, 1vw, 0.75rem); color: var(--col-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; }
+        .kpi-val { font-family: var(--font-display); font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 700; color: var(--col-text); line-height: 1; font-variant-numeric: tabular-nums; }
+        .kpi-val.yellow { color: var(--col-yellow); }
+        
+        .tv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; flex: 1; align-content: start; }
+        .tv-card { background: var(--col-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: all 0.3s var(--ease-smooth); min-height: 150px; animation: fadeInUp 0.5s both; position: relative; overflow: hidden; }
+        .tv-card::before { content:''; position: absolute; inset: 0 0 auto 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent); }
+        .tv-card:nth-child(1) { animation-delay: 0.1s; } .tv-card:nth-child(2) { animation-delay: 0.15s; } .tv-card:nth-child(3) { animation-delay: 0.2s; } .tv-card:nth-child(4) { animation-delay: 0.25s; }
+        .tv-card-head { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; color: var(--col-text); line-height: 1; letter-spacing: -0.5px;}
+        .tv-card-sub { font-size: 0.75rem; font-weight: 700; color: var(--col-muted); text-transform: uppercase; margin-top: 12px; letter-spacing: 1px; padding: 6px 16px 6px 14px; border-radius: 50px; text-align: center; display: inline-flex; align-items: center; gap: 8px; }
+        .tv-card-sub::before { content:''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+        
+        .st-ok { border-bottom: 4px solid var(--status-ok); } .st-ok .tv-card-sub { background: rgba(46,158,79,0.15); color: var(--status-ok); }
+        .st-warn { border-bottom: 4px solid var(--col-yellow); } .st-warn .tv-card-sub { background: rgba(255,204,0,0.15); color: #C79600; } .st-warn .tv-card-head { color: var(--col-yellow); } .st-warn .tv-card-sub::before { animation: ledPulse 1.6s ease-in-out infinite; }
+        .st-err { border-bottom: 4px solid var(--status-nok); background: rgba(229,72,77,0.06); } .st-err .tv-card-head { color: var(--status-nok); } .st-err .tv-card-sub { background: var(--status-nok); color: white; } .st-err .tv-card-sub::before { animation: ledPulse 1s ease-in-out infinite; }
+        .b7-wrapper { display: none !important; margin-top: 2rem; background: var(--col-card); border: 1px solid var(--border-color); border-left: 6px solid #444; border-radius: var(--radius-md); flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; padding: clamp(1rem, 3vw, 2rem); transition: 0.3s; }
+
+        /* --- NAKŁADKA PRZERWY --- */
+        #tv-break-overlay { position: fixed; inset: 0; z-index: 1500; background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; animation: fadeIn 0.5s ease-out; }
+        #tv-break-overlay i { font-size: clamp(4rem, 8vw, 6rem); color: var(--col-yellow); margin-bottom: 1rem; }
+        #tv-break-overlay h1 { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 900; color: white; letter-spacing: -1px; margin: 0; }
+        #tv-break-overlay p { font-size: clamp(1rem, 2vw, 1.5rem); color: #9E9E9E; margin: 1rem 0 2rem 0; font-weight: 500; }
+        #break-timer { font-size: clamp(4rem, 10vw, 8rem); font-weight: 900; color: var(--col-yellow); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -2px; }
+
+        .btn-settings { background: var(--input-bg); border: 1px solid var(--border-color); color: var(--col-text); padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .btn-settings:hover { background: var(--col-yellow); color: black; border-color: var(--col-yellow); }
+
+        /* --- WYSUWANY DZIENNIK ZDARZEŃ --- */
+        #tv-sidebar {
+            position: fixed;
+            top: 0;
+            right: -450px;
+            bottom: 0;
+            width: 400px;
+            background: var(--col-card);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1.5rem;
+            z-index: 2500;
+            transition: right 0.4s var(--ease-smooth);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+        }
+        #tv-sidebar.open { right: 0; }
+        @media (max-width: 600px) { #tv-sidebar { width: 100%; right: -100%; } }
+
+        .log-header { font-weight: 700; font-size: 1rem; color: var(--col-yellow); margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; text-transform: uppercase; letter-spacing: 1px; }
+        .log-feed { flex: 1; overflow-y: auto; font-size: 0.85rem; }
+        .log-item { margin-bottom: 12px; padding-left: 12px; border-left: 3px solid #444; transition: 0.3s; }
+        .log-item.alert { border-left-color: var(--status-nok); background: rgba(211,47,47,0.1); padding: 8px 12px; border-radius: 0 6px 6px 0; }
+        .log-time { color: var(--col-yellow); font-weight: 700; margin-right: 8px; }
+        .log-detail { display: block; color: var(--col-muted); font-size: 0.75rem; margin-top: 4px; font-weight: 500; }
+        .btn-tab { flex: 1; padding: 10px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--col-muted); cursor: pointer; border-radius: 6px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; transition: 0.2s; }
+        .btn-tab.active { background: var(--col-yellow); color: #000; border-color: var(--col-yellow); }
+        /* --- OPERATOR PANEL --- */
+        #view-op { display: flex; flex-direction: column; min-height: 100vh; padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 4vw, 3rem); animation: fadeIn 0.4s ease-out;}
+        .op-header { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem; padding-right: clamp(90px, 12vw, 170px); }
+        .op-title { font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; color: var(--col-text); line-height: 1; letter-spacing: -1px;}
+        .op-info { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+        .op-user-name { font-size: clamp(0.9rem, 2vw, 1.1rem); font-weight: 700; color: var(--col-yellow); display: block; }
+        .op-logout { font-size: 0.8rem; color: var(--col-muted); cursor: pointer; text-decoration: none; transition: 0.2s; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+        .op-logout:hover { color: var(--col-text); }
+        .op-body { flex: 1; display: grid; grid-template-rows: auto 1fr; gap: 2rem; }
+        /* Siatka kafelków i siatka akcji dzielą IDENTYCZNE 3 kolumny + ten sam odstęp,
+           dzięki czemu wszystkie krawędzie kolumn są wyrównane w pionie. */
+        .met-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 2vw, 2rem); }
+        .met-tile { background: var(--col-card); padding: clamp(1.2rem, 2vw, 2rem); border-radius: 12px; border: 1px solid var(--border-color); animation: fadeInUp 0.4s both; }
+        .met-lbl { font-size: clamp(0.6rem, 1vw, 0.75rem); color: var(--col-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;}
+        .met-val { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; color: var(--col-text); margin-top: 8px; line-height: 1; font-variant-numeric: tabular-nums;}
+
+        .act-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: 1fr 1fr; gap: clamp(1rem, 2vw, 2rem); height: 100%; min-height: 400px; animation: fadeInUp 0.6s both; }
+        .btn-big-ok { grid-column: 1 / 3; grid-row: 1 / 3; background: var(--col-yellow); color: #131313; font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700; box-shadow: var(--shadow-soft); letter-spacing: -0.5px; }
+        .btn-help { grid-column: 3; grid-row: 1; background: var(--col-card); border: 1px solid var(--border-color); color: var(--col-text); font-size: clamp(1rem, 2vw, 1.3rem); }
+        .btn-doc { grid-column: 3; grid-row: 2; background: var(--col-card); border: 1px solid var(--border-color); color: var(--col-text); font-size: clamp(0.9rem, 1.5vw, 1.1rem); }
+        .btn-ind { border: none; border-radius: var(--radius-lg); font-family: inherit; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: all 0.25s var(--ease-smooth); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 1.5rem; text-align: center;}
+        .btn-ind i { font-size: clamp(2rem, 3vw, 2.5rem); margin-bottom: 12px; }
+        .btn-sub { font-size: clamp(0.7rem, 1vw, 0.9rem); font-weight: 500; opacity: 0.8; margin-top: 8px; text-transform: none; }
+        .btn-big-ok:hover:not(:disabled) { transform: translateY(-4px) scale(1.01); box-shadow: var(--shadow-hover), 0 0 0 6px rgba(255,204,0,0.12); }
+        .btn-big-ok:active:not(:disabled) { transform: translateY(-1px) scale(0.99); }
+        .btn-big-ok:disabled { background: var(--border-color); color: var(--col-muted); box-shadow: none; cursor: not-allowed; }
+        .btn-doc:hover { border-color: var(--col-yellow); color: var(--col-yellow); transform: translateY(-2px); }
+        .btn-help:hover { background: var(--border-color); transform: translateY(-2px); }
+        .btn-help.active { background: var(--status-warn); color: white; border-color: var(--status-warn); }
+        .btn-ind:focus-visible, .btn-action:focus-visible, .btn-reason:focus-visible, .inp-login:focus-visible, .btn-settings:focus-visible { outline: 3px solid var(--col-yellow); outline-offset: 2px; }
+
+        /* --- MODALS --- */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(6,6,7,0.82); backdrop-filter: blur(6px); z-index: 3000; display: flex; justify-content: center; align-items: center; padding: 1rem; overflow-y: auto; opacity: 0; transition: opacity 0.3s ease; pointer-events: none;}
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+        .modal-box { background: var(--col-card); width: 100%; max-width: 600px; padding: clamp(1.5rem, 4vw, 3rem); border-radius: var(--radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-hover); margin: auto; transform: translateY(20px) scale(0.98); transition: transform 0.35s var(--ease-smooth); }
+        .modal-overlay.show .modal-box { transform: translateY(0) scale(1); }
+        .modal-head { font-family: var(--font-display); font-size: clamp(1.2rem, 3vw, 1.8rem); font-weight: 700; color: var(--col-text); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
+        .reason-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; }
+        .btn-reason { padding: 1rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--col-text); font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; border-radius: var(--radius-sm); transition: 0.2s; text-align: left; display: flex; align-items: center; gap: 10px; }
+        .btn-reason:hover { background: var(--col-bg); border-color: var(--col-yellow); color: var(--col-yellow); transform: translateY(-2px); }
+        .btn-action { width: 100%; padding: 1rem; background: var(--border-color); color: var(--col-text); font-family: inherit; font-weight: 700; font-size: 0.95rem; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: 0.2s; margin-top: 1.5rem; text-transform: uppercase; }
+        .btn-action:hover { opacity: 0.85; transform: translateY(-1px); }
+        .btn-action.primary { background: var(--col-yellow); color: #000; border: none;}
+        .btn-action.primary:hover { background: var(--col-yellow-deep); }
+        .btn-action.danger { background: var(--status-nok); color: white; border: none;}
+        .btn-action.danger:hover { background: #C62828; }
+        .inp-textarea, .inp-text { width: 100%; padding: 1rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--col-text); font-family: inherit; font-size: 0.95rem; border-radius: var(--radius-sm); transition: 0.2s; }
+        .inp-textarea { resize: none; height: 100px; }
+        .inp-textarea:focus, .inp-text:focus { outline: none; border-color: var(--col-yellow); box-shadow: var(--glow-yellow); }
+
+        /* --- TEAMS TOAST --- */
+        #teams-toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: #2b2b36; border: 1px solid var(--teams-col); padding: 1rem 1.5rem; border-radius: 8px; z-index: 4000; display: flex; align-items: center; gap: 15px; width: max-content; max-width: 90vw; box-shadow: 0 10px 30px rgba(91, 95, 199, 0.3); transition: bottom 0.5s var(--ease-smooth); }
+        #teams-toast.show { bottom: 30px; }
+        #teams-toast i { color: #8A8EF0; font-size: 1.5rem; }
+        #teams-toast .tt-text { font-weight: 700; color: white; font-size: 0.9rem;}
+        #teams-toast .tt-sub { font-size: 0.75rem; color: #B0B0B0; font-weight: 500; }
+
+        @media (max-width: 1200px) { 
+            #view-tv { flex-direction: column; } 
+            .tv-sidebar { width: 100%; border-right: none; border-top: 1px solid var(--border-color); max-height: 350px; padding-top: 2rem;} 
+            #global-logo { display: none !important; } 
+            /* Gdy ukrywamy logo na mniejszych ekranach, zabieramy mu też ten pusty margines ochronny */
+            .tv-top-bar, .op-header { padding-right: 0 !important; } 
+        }
+
+        /* Tablety (>640px): układ 3-kolumnowy pozostaje wyrównany, niższy obszar akcji */
+        @media (max-width: 900px) {
+            .act-grid { min-height: 360px; }
+        }
+        @media (max-width: 600px) { 
+            .tv-top-bar { flex-direction: column; align-items: flex-start; } 
+            .kpi-wrapper { flex-direction: column; width: 100%; gap: 1rem;} 
+            .b7-wrapper { flex-direction: column; align-items: flex-start; } 
+            #teams-toast { flex-direction: column; text-align: center; } 
+            .op-header { flex-direction: column; align-items: center; text-align: center;} 
+            .op-info { align-items: center; } 
+            .met-grid { grid-template-columns: 1fr; } 
+        }
+
+        /* --- TABLETY PIONOWO I TELEFONY (≤640px): pełne układanie pionowe --- */
+        @media (max-width: 640px) {
+            .op-body { gap: 1rem; display: flex; flex-direction: column; }
+            .met-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .act-grid { display: grid; grid-template-columns: 1fr; grid-template-rows: repeat(3, auto); gap: 1rem; min-height: auto; }
+            .btn-big-ok { grid-column: 1; grid-row: 1; min-height: 150px; font-size: clamp(1.6rem, 5vw, 2.4rem); }
+            .btn-help { grid-column: 1; grid-row: 2; min-height: 88px; font-size: clamp(0.95rem, 2vw, 1.2rem); }
+            .btn-doc { grid-column: 1; grid-row: 3; min-height: 88px; font-size: clamp(0.95rem, 2vw, 1.2rem); }
+        }
+    </style>
+</head>
+<body>
+
+    <img id="global-logo" src="logo.png" alt="InPost Logo">
+
+    <script>
+        const savedTheme = localStorage.getItem('andon_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+
+    <div id="teams-toast">
+        <i class="material-icons">notifications_active</i>
+        <div>
+            <div class="tt-text">Zgłoszenie wysłane</div>
+            <div class="tt-sub">Wiadomość dostarczona na kanał MS Teams</div>
+        </div>
+    </div>
+
+    <div id="view-login">
+        <div class="login-panel">
+            <img src="logo.png" alt="InPost Logo" class="login-logo">
+            <h1>Andon System</h1>
+            <p>Logowanie pracownika</p>
+            
+            <div class="input-group">
+                <label>Wybierz stanowisko</label>
+                <div class="custom-select-wrapper" id="custom-station-select">
+                    <div class="custom-select-trigger">
+                        <div class="trigger-content">
+                            <i class="material-icons opt-icon">precision_manufacturing</i>
+                            <span>Stanowisko Y0</span>
+                        </div>
+                        <i class="material-icons arrow">expand_more</i>
+                    </div>
+                    <div class="custom-options">
+                        <div class="custom-option selected" data-value="y0"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko Y0</span><span class="opt-sub">Linia Y</span></div></div>
+                        <div class="custom-option" data-value="y1"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko Y1</span><span class="opt-sub">Linia Y</span></div></div>
+                        <div class="custom-option" data-value="y2"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko Y2</span><span class="opt-sub">Linia Y</span></div></div>
+                        <div class="custom-option" data-value="y3"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko Y3</span><span class="opt-sub">Linia Y</span></div></div>
+                        <div class="custom-option" data-value="y4"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko Y4</span><span class="opt-sub">Linia Y</span></div></div>
+                        <div class="custom-option" data-value="admin"><i class="material-icons opt-icon" style="color: var(--col-yellow)">admin_panel_settings</i><div class="opt-text"><span class="opt-title">Panel Brygadzisty</span><span class="opt-sub">Zarządzanie Linią</span></div></div>
+                        <div class="custom-option" data-value="tv"><i class="material-icons opt-icon" style="color: var(--teams-col)">tv</i><div class="opt-text"><span class="opt-title">Główny Dashboard</span><span class="opt-sub">Ekran Informacyjny (TV)</span></div></div>
+                    </div>
+                </div>
+                <input type="hidden" id="station-select" value="y0">
+            </div>
+
+            <div class="input-group" style="margin-top: 1.5rem;">
+                <label>Hasło dostępowe</label>
+                <input type="password" id="password-input" class="inp-login" placeholder="Wprowadź hasło..." autofocus autocomplete="off">
+            </div>
+            
+            <button class="btn-action primary" onclick="Auth.login()" style="margin-top: 1.5rem; width: 100%; font-size: 1.1rem; font-weight: 800; padding: 1.2rem; border-radius: 8px;">
+                ZALOGUJ SIĘ
+            </button>
+            <div id="l-msg" style="color:var(--status-nok); margin-top:15px; font-weight:600; font-size:0.85rem; min-height:20px;"></div>
+        </div>
+    </div>
+
+    <div id="view-tv" class="hidden">
+        <div id="tv-break-overlay" class="hidden">
+            <i class="material-icons" id="overlay-icon">coffee</i>
+            <h1 id="overlay-title">PRZERWA</h1>
+            <p>Czas taktu na stanowiskach został wstrzymany.</p>
+            <div id="break-timer">05:00</div>
+        </div>
+
+        <div class="tv-main">
+            <div class="tv-top-bar">
+      <div class="title-main">
+                    DASHBOARD
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-settings" onclick="toggleFullScreen()" title="Pełny Ekran"><i class="material-icons" id="fs-icon">fullscreen</i></button>
+                        <button class="btn-settings" onclick="modals.open('admin')" title="Ustawienia Linii"><i class="material-icons">settings</i></button>
+                        <button class="btn-settings" onclick="document.getElementById('tv-sidebar').classList.add('open')" title="Dziennik Zdarzeń"><i class="material-icons">history</i></button>
+                    </div>
+                </div>
+                <div class="kpi-wrapper">
+                    <div class="kpi-unit"><div class="kpi-lbl">Status Linii</div><div class="kpi-val" id="tv-status" style="color:var(--status-ok)">PRACA</div></div>
+                    <div class="kpi-unit"><div class="kpi-lbl">Czas Taktu</div><div class="kpi-val yellow" id="tv-takt">28:00</div></div>
+                    <div class="kpi-unit"><div class="kpi-lbl" id="tv-goal-lbl">Realizacja (Cel: 15)</div><div class="kpi-val" id="tv-count">0/15</div></div>
+                    <div class="kpi-unit"><div class="kpi-lbl">Zegar systemowy</div><div class="kpi-val" style="color: var(--col-muted);" id="sys-clock">12:00</div></div>
+                </div>
+            </div>
+            <div class="tv-grid" id="tv-grid"></div>
+        </div>
+
+<div id="tv-sidebar">
+            <div class="log-header" style="flex-direction: column; align-items: stretch;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span>Dziennik Zdarzeń</span>
+                    <i class="material-icons" style="font-size: 1.5rem; cursor: pointer;" onclick="document.getElementById('tv-sidebar').classList.remove('open')" title="Zamknij panel">close</i>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-tab active" onclick="switchLogTab('general')">Ogólne</button>
+                    <button class="btn-tab" onclick="switchLogTab('cycles')">Czasy Wykonania</button>
+                </div>
+            </div>
+            <div class="log-feed" id="tv-logs"></div>
+            <div class="log-feed hidden" id="tv-cycle-logs"></div>
+        </div>
+    </div><!-- /#view-tv -->
+
+    <div id="view-op" class="hidden">
+        <div class="op-header">
+            <div><div class="op-title" id="op-title">Y0</div></div>
+            <div class="op-info">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                    <span class="op-user-name" id="op-user-name">Jan Kowalski</span>
+                    <i class="material-icons" style="color: var(--col-muted); cursor: pointer; font-size: 1.2rem; transition: 0.2s;" onclick="modals.open('op-settings')" title="Ustawienia Operatora" onmouseover="this.style.color='var(--col-text)'" onmouseout="this.style.color='var(--col-muted)'">settings</i>
+                </div>
+                <div class="op-logout" onclick="location.reload()"><i class="material-icons" style="font-size: 1rem; vertical-align: text-bottom;">logout</i> Wyloguj i zmień konto</div>
+            </div>
+        </div>
+
+        <div class="op-body">
+            <div class="met-grid">
+                <div class="met-tile" style="border-left-color: var(--status-ok);"><div class="met-lbl">Czas Taktu</div><div class="met-val" id="op-takt">28:00</div></div>
+                <div class="met-tile" style="border-left-color: var(--status-nok)"><div class="met-lbl">Czas Przestoju</div><div class="met-val" id="op-down" style="color: var(--status-nok)">00:00</div></div>
+                <div class="met-tile" style="border-left-color: var(--col-yellow)"><div class="met-lbl" id="op-goal-lbl">Wykonano (Cel: 15)</div><div class="met-val" id="op-count">0/15</div></div>
+            </div>
+
+            <div class="act-grid">
+                <button class="btn-ind btn-big-ok" id="btn-ok" onclick="Logic.actionOK()">POTWIERDŹ OK<div class="btn-sub">Zakończ cykl jako prawidłowy</div></button>
+                <button class="btn-ind btn-help" id="btn-help" onclick="Logic.handleSupportClick()"><i class="material-icons">support_agent</i> Wezwij Wsparcie</button>
+                <button class="btn-ind btn-doc" onclick="modals.open('doc')"><i class="material-icons">description</i> Instrukcja SWI</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-op-settings" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-head" style="color: var(--col-yellow);">Ustawienia Wyglądu</div>
+            <p style="color: var(--col-muted); font-size: 0.9rem; margin-bottom: 20px;">Dostosuj aplikację do swoich preferencji.</p>
+            <div class="input-group">
+                <label>Motyw aplikacji</label>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-action" style="margin-top: 0; background: var(--input-bg); color: var(--col-text); border: 1px solid var(--border-color);" onclick="setTheme('dark')"><i class="material-icons" style="vertical-align: middle; margin-right: 5px;">dark_mode</i> Ciemny</button>
+                    <button class="btn-action" style="margin-top: 0; background: var(--input-bg); color: var(--col-text); border: 1px solid var(--border-color);" onclick="setTheme('light')"><i class="material-icons" style="vertical-align: middle; margin-right: 5px;">light_mode</i> Jasny</button>
+                </div>
+            </div>
+            <button class="btn-action primary" onclick="modals.close('op-settings')">Zapisz i Zamknij</button>
+        </div>
+    </div>
+
+    <div id="modal-admin" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-head" style="color: var(--col-yellow); display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                <span>Zarządzanie Linią</span>
+                <i class="material-icons" style="cursor: pointer; color: var(--col-muted); font-size: 1.6rem; transition: color 0.2s;" onclick="modals.close('admin')" onmouseover="this.style.color='var(--col-text)'" onmouseout="this.style.color='var(--col-muted)'" title="Zamknij">close</i>
+            </div>
+            <p style="color: var(--col-muted); font-size: 0.9rem; margin-bottom: 20px;">Czas taktu zostanie automatycznie obliczony na podstawie celu na zmianę (uwzględniając 45 min przerw).</p>
+            <div class="input-group">
+                <label>Dzienny cel produkcyjny (ilość maszyn)</label>
+                <input type="number" id="admin-goal-input" class="inp-text" value="15" min="1" max="100">
+            </div>
+            <div class="input-group" style="margin-top: 15px;">
+                <label>Dostępny czas pracy netto (w minutach)</label>
+                <input type="number" id="admin-time-input" class="inp-text" value="420" min="1" max="1000">
+                <div style="font-size: 0.75rem; color: var(--col-muted); margin-top: 5px;">Domyślnie pełna zmiana to 420 min. Jeśli startujecie np. o 8:00, wpisz odpowiednio mniej (np. 300).</div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-action primary" style="margin-top:0;" onclick="Logic.saveAdminSettings()">Przelicz i Zapisz</button>
+                <button class="btn-action" style="background: transparent; border: 1px solid var(--border-color); color: var(--col-text); margin-top:0;" onclick="modals.close('admin')">Anuluj</button>
+            </div>
+
+            <!-- NOWOŚĆ: Czas pracy zmiany (Start / Stop) -->
+            <div class="input-group" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <label>Czas pracy zmiany</label>
+                <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;">
+                    <div id="shift-status" style="font-weight: 800; letter-spacing: 0.5px; color: var(--status-nok);">NIE ROZPOCZĘTA</div>
+                    <div id="shift-elapsed" style="font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-left: auto;">00:00:00</div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-action primary" style="margin-top:0; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="Logic.shiftStart()"><i class="material-icons">play_arrow</i> Start zmiany</button>
+                    <button class="btn-action danger" style="margin-top:0; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="Logic.shiftStop()"><i class="material-icons">stop</i> Stop</button>
+                </div>
+            </div>
+
+            <!-- NOWOŚĆ: Planner czasu pracy (automatyczny start) -->
+            <div class="input-group" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <label>Planner czasu pracy — automatyczny start</label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch;">
+                    <input type="date" id="planner-date" class="inp-text" style="flex: 1 1 140px; min-width: 0;">
+                    <input type="time" id="planner-time" class="inp-text" style="flex: 1 1 110px; min-width: 0;">
+                    <button class="btn-action primary" style="margin-top:0; width:auto; padding: 0 1.3rem; white-space: nowrap;" onclick="Logic.plannerAdd()">Dodaj</button>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--col-muted); margin-top: 6px;">O wybranej dacie i godzinie zmiana wystartuje automatycznie (liczniki zostaną wyzerowane).</div>
+                <div id="planner-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+            <div class="input-group" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <label>Motyw aplikacji</label>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-action" style="margin-top: 0; background: var(--input-bg); color: var(--col-text); border: 1px solid var(--border-color);" onclick="setTheme('dark')"><i class="material-icons" style="vertical-align: middle; margin-right: 5px;">dark_mode</i> Ciemny</button>
+                    <button class="btn-action" style="margin-top: 0; background: var(--input-bg); color: var(--col-text); border: 1px solid var(--border-color);" onclick="setTheme('light')"><i class="material-icons" style="vertical-align: middle; margin-right: 5px;">light_mode</i> Jasny</button>
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--col-muted); margin-bottom:0.75rem; text-transform:uppercase; letter-spacing:1.5px;">Eksport pomiarów</label>
+                <button class="btn-action" style="margin-top:0; background: var(--input-bg); color: var(--col-text); border: 1px solid var(--border-color); display:flex; align-items:center; justify-content:center; gap:8px;" onclick="Logic.exportCycles()"><i class="material-icons">download</i> Pobierz czasy wykonania (.xlsx)</button>
+                <div id="export-msg" style="font-size:0.75rem; color:var(--col-muted); margin-top:8px; min-height:16px;"></div>
+            </div>
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <button class="btn-action danger" style="margin-top:0; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="location.reload()"><i class="material-icons">logout</i> WYLOGUJ I ZMIEŃ KONTO</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-support" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-head">Potrzebuję wsparcia z powodu:</div>
+            <div class="reason-grid">
+                <button class="btn-reason" onclick="Logic.showMaterialComment()"><i class="material-icons" style="color:var(--col-yellow)">inventory_2</i> Brak Materiału</button>
+                <button class="btn-reason" onclick="Logic.callSupport('Awaria Maszyny')"><i class="material-icons" style="color:var(--status-nok)">build</i> Awaria Maszyny</button>
+                <button class="btn-reason" onclick="Logic.callSupport('Wada materiału')"><i class="material-icons" style="color:var(--status-nok)">report</i> Wada materiału</button>
+                <button class="btn-reason" onclick="Logic.callSupport('Inne / Brygadzista')"><i class="material-icons" style="color:var(--col-muted)">contact_support</i> Inne / Potrzebny Brygadzista</button>
+            </div>
+            <div id="support-comment-container" class="hidden" style="margin-top: 20px;">
+                <label style="display: block; color: var(--col-yellow); margin-bottom: 8px; font-size: 0.9rem; font-weight: bold;">Opisz, jakiego materiału brakuje:</label>
+                <textarea id="support-comment" class="inp-textarea" placeholder="Wpisz komentarz (np. jakiej części brakuje)..."></textarea>
+                <button id="btn-send-material-support" class="btn-action primary" onclick="Logic.callSupport('Brak Materiału', true)">Wyślij Zgłoszenie o Braku Materiału</button>
+            </div>
+            <button class="btn-action" style="background: transparent; border: 1px solid var(--border-color); color: var(--col-text); margin-top: 1.5rem;" onclick="Logic.closeSupportModal()">Zamknij</button>
+        </div>
+    </div>
+
+    <div id="modal-doc" class="modal-overlay">
+        <div class="modal-box" style="max-width: 800px;">
+            <div class="modal-head">Instrukcja SWI</div>
+            <div style="color: var(--col-muted); font-size: 0.95rem; line-height: 1.6;">
+                <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);"><strong style="color: var(--col-yellow); display: block; margin-bottom: 8px;">KROK 1: WERYFIKACJA WIZUALNA</strong> Sprawdź komponenty z dokumentacją BOM.</div>
+                <div><strong style="color: var(--col-yellow); display: block; margin-bottom: 8px;">KROK 2: MONTAŻ WŁAŚCIWY</strong> Zamontuj element zgodnie ze schematem.</div>
+            </div>
+            <button class="btn-action primary" onclick="modals.close('doc')">Zrozumiałem</button>
+        </div>
+    </div>
+
+    <!-- NOWOŚĆ: uniwersalne, ostylowane okno dialogowe (zastępuje natywne confirm/alert) -->
+    <div id="modal-dialog" class="modal-overlay" style="z-index: 3500;" onclick="if(event.target===this) Dialog._close(false)">
+        <div class="modal-box" style="max-width: 440px;">
+            <div class="modal-head" id="dialog-title">Potwierdzenie</div>
+            <p id="dialog-msg" style="color: var(--col-muted); font-size: 0.95rem; line-height: 1.6; margin: 0;"></p>
+            <div style="display: flex; gap: 10px; margin-top: 1.75rem;">
+                <button class="btn-action primary" id="dialog-ok" style="margin-top:0;" onclick="Dialog._close(true)">Potwierdź</button>
+                <button class="btn-action" id="dialog-cancel" style="margin-top:0; background: transparent; border: 1px solid var(--border-color); color: var(--col-text);" onclick="Dialog._close(false)">Anuluj</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Zabezpieczenie: jeśli biblioteka socket.io się nie załadowała
+        // (np. strona otwarta jako plik file:// lub przez inny serwer niż Node,
+        //  albo serwer nie działa i /socket.io/socket.io.js zwraca 404),
+        // to io jest undefined. Bez tego guardu ReferenceError ubijał CAŁY skrypt,
+        // przez co nie działało logowanie ani zmiana stanowiska.
+        let socket;
+        if (typeof io === 'function') {
+            socket = io();
+        } else {
+            console.error('[Andon] Nie załadowano socket.io. Otwórz aplikację przez serwer Node (np. http://localhost:3000), a nie jako plik.');
+            socket = { on() {}, emit() {} }; // stub – interfejs logowania nadal działa
+            document.addEventListener('DOMContentLoaded', () => {
+                const m = document.getElementById('l-msg');
+                if (m) m.innerText = 'Brak połączenia z serwerem. Uruchom serwer (npm start) i otwórz http://localhost:3000';
+            });
+        }
+        let localDB = null;
+        let currentUser = null; 
+        let currentUserName = null;
+        const CFG = { stations: ['y0','y1','y2','y3','y4'], netShiftMins: 420 };
+
+        socket.on('sync', (serverState) => {
+            const prev = localDB;
+            localDB = serverState;
+            Render.all();
+            maybePlaySupportSound(prev, serverState);
+        });
+
+        // ===== Dźwięk wezwania wsparcia (odtwarzany na dashboardzie TV i w panelu brygadzisty) =====
+        let supportAudio = null;
+        function primeSupportSound() {
+            // Odblokowanie audio w ramach gestu użytkownika (kliknięcie logowania) — polityka autoplay przeglądarki.
+            try {
+                supportAudio = new Audio('wssong.mp3');
+                supportAudio.muted = true;
+                const p = supportAudio.play();
+                if (p && p.then) p.then(() => { supportAudio.pause(); supportAudio.currentTime = 0; supportAudio.muted = false; }).catch(() => {});
+            } catch (e) { /* ignore */ }
+        }
+        function playSupportSound() {
+            try {
+                if (!supportAudio) supportAudio = new Audio('wssong.mp3');
+                supportAudio.muted = false;
+                supportAudio.currentTime = 0;
+                const p = supportAudio.play();
+                if (p && p.catch) p.catch(err => console.warn('[Andon] Nie można odtworzyć dźwięku wsparcia:', err && err.message));
+            } catch (e) { console.warn('[Andon] Audio:', e); }
+        }
+        function maybePlaySupportSound(prev, cur) {
+            // Tylko dashboard TV / brygadzista (oba to widok view-tv); operatorzy nie odtwarzają.
+            if (!(currentUser === 'tv' || currentUser === 'admin')) return;
+            if (!cur || !cur.st) return;
+            for (const id of CFG.stations) {
+                const nowS = !!(cur.st[id] && cur.st[id].s);
+                const prevS = !!(prev && prev.st && prev.st[id] && prev.st[id].s);
+                if (nowS && !prevS) { playSupportSound(); return; }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const wrapper = document.getElementById('custom-station-select');
+            const trigger = wrapper.querySelector('.custom-select-trigger');
+            const options = wrapper.querySelectorAll('.custom-option');
+            const hiddenInput = document.getElementById('station-select');
+            const triggerContent = trigger.querySelector('.trigger-content');
+
+            trigger.addEventListener('click', () => wrapper.classList.toggle('open'));
+
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    const value = option.getAttribute('data-value');
+                    const title = option.querySelector('.opt-title').innerText;
+                    const icon = option.querySelector('.opt-icon').innerText;
+                    const iconStyle = option.querySelector('.opt-icon').getAttribute('style') || '';
+                    
+                    hiddenInput.value = value;
+                    triggerContent.innerHTML = `<i class="material-icons opt-icon" style="${iconStyle}">${icon}</i><span style="font-weight: 600;">${title}</span>`;
+                    
+                    options.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    wrapper.classList.remove('open');
+                });
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!wrapper.contains(e.target)) wrapper.classList.remove('open');
+            });
+        });
+
+function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+
+            // --- NOWOŚĆ: Automatyczna podmiana logo zależnie od motywu ---
+            // Jeśli motyw to 'light' ładujemy logo.png, w przeciwnym razie logo2.png (białe)
+            const logoPath = (theme === 'light') ? 'logo.png' : 'logo2.png';
+            
+            // 1. Zmiana loga na ekranie logowania
+            const loginLogo = document.querySelector('.login-logo');
+            if (loginLogo) loginLogo.src = logoPath;
+            
+            // 2. Zmiana głównego loga w prawym górnym rogu (po zalogowaniu)
+            const globalLogo = document.getElementById('global-logo');
+            if (globalLogo) globalLogo.src = logoPath;
+            
+        }
+
+        // WYMUSZENIE POPRAWNEGO LOGA OD RAZU PO ZAŁADOWANIU STRONY
+        const initialTheme = localStorage.getItem('theme') || 'dark';
+        setTheme(initialTheme);
+
+        document.getElementById('password-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); Auth.login(); }
+        });
+
+        function sendTeamsNotification(title, message) {
+            const toast = document.getElementById('teams-toast');
+            toast.classList.add('show'); 
+            setTimeout(() => toast.classList.remove('show'), 4000);
+            const webhookUrl = "https://discord.com/api/webhooks/1499094596167143454/cPjKtQK8em6Ew2kSWIi_yeqqwrKftEVn7nU9NKTKUGQfYClHGdoDcMZeXhHO-wrairOT"; 
+            const payload = { username: "Andon System", embeds: [{ title: title, description: message, color: 15158332 }] };
+            fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(err => console.error(err));
+        }
+
+        function checkBreak() {
+            const d = new Date();
+            const currentMins = d.getHours() * 60 + d.getMinutes();
+            const currentSecsTotal = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+
+            const schedule = [
+                { name: "ODPRAWA (ZMIANA 1)", start: 6*60, end: 6*60+5, icon: "groups" },
+                { name: "PRZERWA ŚNIADANIOWA", start: 8*60, end: 8*60+5, icon: "coffee" },
+                { name: "GŁÓWNA PRZERWA (Z1)", start: 10*60, end: 10*60+30, icon: "restaurant" },
+                { name: "PRZERWA (Z1)", start: 12*60+30, end: 12*60+35, icon: "coffee" },
+                { name: "ODPRAWA (ZMIANA 2)", start: 14*60+5, end: 14*60+10, icon: "groups" },
+                { name: "PRZERWA (Z2)", start: 16*60, end: 16*60+5, icon: "coffee" },
+                { name: "GŁÓWNA PRZERWA (Z2)", start: 18*60, end: 18*60+30, icon: "restaurant" },
+                { name: "PRZERWA (Z2)", start: 20*60+30, end: 20*60+35, icon: "coffee" }
+            ];
+            for(let ev of schedule) {
+                if(currentMins >= ev.start && currentMins < ev.end) {
+                    const endSecsTotal = ev.end * 60;
+                    return { active: true, name: ev.name, icon: ev.icon, left: endSecsTotal - currentSecsTotal };
+                }
+            }
+            return { active: false };
+        }
+
+        function switchLogTab(tab) {
+            const tabs = document.querySelectorAll('.btn-tab');
+            tabs[0].classList.toggle('active', tab === 'general');
+            tabs[1].classList.toggle('active', tab === 'cycles');
+            
+            document.getElementById('tv-logs').classList.toggle('hidden', tab !== 'general');
+            document.getElementById('tv-cycle-logs').classList.toggle('hidden', tab !== 'cycles');
+        }
+
+        const Auth = {
+            login: () => {
+                const station = document.getElementById('station-select').value;
+                const pwd = document.getElementById('password-input').value.trim();
+                const err = document.getElementById('l-msg');
+                
+                let isValid = false;
+                let uName = "";
+
+                if ((station === 'admin' || station === 'tv') && pwd === 'admin') {
+                    isValid = true;
+                    uName = station === 'admin' ? "Brygadzista" : "Dashboard TV";
+                } else if (station.startsWith('y') && pwd === '123456') {
+                    isValid = true;
+                    uName = "Operator " + station.toUpperCase();
+                }
+
+                if (isValid) {
+                    if (!localDB) {
+                        err.innerText = "Brak połączenia z serwerem. Upewnij się, że serwer Node.js działa!";
+                        return;
+                    }
+                    currentUser = station; 
+                    currentUserName = uName;
+                    
+                    if (station === 'tv' || station === 'admin') {
+                        document.getElementById('admin-goal-input').value = localDB.goal;
+                        primeSupportSound();
+                        UI.switch('view-tv');
+                    } else {
+                        document.getElementById('op-title').innerText = station.toUpperCase();
+                        document.getElementById('op-user-name').innerText = currentUserName;
+                        UI.switch('view-op'); 
+                    }
+                    document.getElementById('password-input').value = '';
+                    err.innerText = '';
+                } else { 
+                    err.innerText = "Nieprawidłowe hasło. Spróbuj ponownie."; 
+                    document.getElementById('password-input').value = ''; 
+                }
+            }
+        };
+
+        const Logic = {
+            actionOK: () => {
+                const btn = document.getElementById('btn-ok');
+                if (btn) btn.disabled = true;
+                socket.emit('actionOK', currentUser);
+            },
+            handleSupportClick: () => {
+                if (localDB && localDB.st[currentUser] && localDB.st[currentUser].s) {
+                    Logic.cancelSupport();
+                } else {
+                    document.getElementById('support-comment-container').classList.add('hidden');
+                    document.getElementById('support-comment').value = '';
+                    modals.open('support');
+                }
+            },
+            showMaterialComment: () => {
+                document.getElementById('support-comment-container').classList.remove('hidden');
+            },
+            callSupport: (reason, isMaterialShortage = false) => {
+                let comment = isMaterialShortage ? document.getElementById('support-comment').value.trim() : '';
+                socket.emit('callSupport', { user: currentUser, userName: currentUserName, reason, comment });
+                Logic.closeSupportModal(); 
+            },
+            closeSupportModal: () => {
+                document.getElementById('support-comment').value = ''; 
+                document.getElementById('support-comment-container').classList.add('hidden');
+                modals.close('support');
+            },
+            cancelSupport: () => {
+                socket.emit('cancelSupport', { user: currentUser, userName: currentUserName });
+            },
+saveAdminSettings: () => {
+                const newGoal = parseInt(document.getElementById('admin-goal-input').value);
+                const newTime = parseInt(document.getElementById('admin-time-input').value) || 420;
+                
+                if(newGoal > 0 && newTime > 0) {
+                    socket.emit('adminSettings', { goal: newGoal, time: newTime });
+                    modals.close('admin');
+                }
+            },
+            exportCycles: () => {
+                const msg = document.getElementById('export-msg');
+                const rows = (localDB && localDB.cycleTimes) ? localDB.cycleTimes : [];
+                if (!rows.length) { if (msg) { msg.style.color = 'var(--status-warn)'; msg.innerText = 'Brak zarejestrowanych czasów do eksportu.'; } return; }
+                try {
+                    const r = Exporter.downloadCycles(rows);
+                    if (msg) { msg.style.color = 'var(--status-ok)'; msg.innerText = `Pobrano ${r.count} pomiarów → ${r.fname}`; }
+                } catch (e) {
+                    console.error('[Andon] Eksport .xlsx nie powiódł się:', e);
+                    if (msg) { msg.style.color = 'var(--status-nok)'; msg.innerText = 'Błąd podczas generowania pliku .xlsx.'; }
+                }
+            },
+            shiftStart: () => { Dialog.confirm('Rozpocząć nową zmianę? Bieżące liczniki (wykonano, przestój, czasy cykli) zostaną wyzerowane.', { title: 'Rozpoczęcie zmiany', okText: 'Rozpocznij' }).then(ok => { if (ok) socket.emit('shiftStart'); }); },
+            shiftStop: () => { Dialog.confirm('Zatrzymać zmianę? Czas pracy i liczniki zostaną zamrożone.', { title: 'Zatrzymanie zmiany', okText: 'Zatrzymaj', danger: true }).then(ok => { if (ok) socket.emit('shiftStop'); }); },
+            plannerAdd: () => {
+                const d = document.getElementById('planner-date').value;
+                const t = document.getElementById('planner-time').value;
+                if (!d || !t) { Dialog.alert('Podaj datę i godzinę rozpoczęcia.', { title: 'Brak danych' }); return; }
+                socket.emit('plannerAdd', { date: d, time: t });
+                document.getElementById('planner-time').value = '';
+            },
+            plannerRemove: (id) => { socket.emit('plannerRemove', id); }
+        };
+
+        const Render = {
+            all: () => {
+                const db = localDB; 
+                if (!db) return; 
+
+                const now = Date.now();
+                const bStat = checkBreak();
+
+                // Przerwy przełączamy tylko podczas aktywnej zmiany
+                if(db.shiftActive && bStat.active && !db.isBreak) {
+                    socket.emit('setBreakStart', now);
+                } else if (db.shiftActive && !bStat.active && db.isBreak) {
+                    socket.emit('setBreakEnd', now);
+                }
+
+                // Poza aktywną zmianą wszystko jest zamrożone na chwili zatrzymania
+                let calcNow = !db.shiftActive ? (db.shiftStopTime || now) : (db.isBreak ? db.breakStart : now);
+                let tSec = 0, dSec = db.accDown;
+
+                if(db.isDown) {
+                    if(db.downStart) dSec += Math.floor((calcNow - db.downStart)/1000);
+                }
+                else {
+                    let diff = Math.floor((db.target - calcNow)/1000);
+                    if(diff >= 0) {
+                        tSec = diff;
+                    } else {
+                        tSec = 0;
+                        if (db.shiftActive && !db.isDown) {
+                            socket.emit('setDown', calcNow);
+                        }
+                    }
+                }
+
+                Render.shift(db);
+                if(!document.getElementById('view-tv').classList.contains('hidden')) Render.tv(db, tSec, bStat);
+                if(!document.getElementById('view-op').classList.contains('hidden')) Render.op(db, tSec, dSec);
+            },
+            tv: (db, tSec, bStat) => {
+                document.getElementById('sys-clock').innerText = new Date().toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit', timeZone: 'Europe/Warsaw'});
+                document.getElementById('tv-takt').innerText = fmt(tSec);
+                document.getElementById('tv-goal-lbl').innerText = `Realizacja (Cel: ${db.goal})`;
+                document.getElementById('tv-count').innerText = `${db.count}/${db.goal}`;
+                
+                const overlay = document.getElementById('tv-break-overlay');
+                if(bStat.active && db.shiftActive && currentUser === 'tv') {
+                    overlay.classList.remove('hidden');
+                    document.getElementById('overlay-title').innerText = bStat.name;
+                    document.getElementById('overlay-icon').innerText = bStat.icon;
+                    document.getElementById('break-timer').innerText = fmt(bStat.left);
+                } else {
+                    overlay.classList.add('hidden');
+                }
+
+                const st = document.getElementById('tv-status');
+                if(!db.shiftActive) { st.innerText = db.shiftStart ? "ZATRZYMANA" : "OCZEKIWANIE"; st.style.color = "var(--col-muted)"; }
+                else if(db.isDown) { st.innerText = "PRZESTÓJ"; st.style.color = "var(--status-nok)"; }
+                else { st.innerText = "PRACA"; st.style.color = "var(--status-ok)"; }
+
+                const g = document.getElementById('tv-grid'); 
+                if(g.children.length === 0) g.innerHTML = CFG.stations.map(id => `<div class="tv-card" id="card-${id}"><div class="tv-card-head">${id.toUpperCase()}</div><div class="tv-card-sub" id="sub-${id}">W TOKU</div></div>`).join('');
+                
+                CFG.stations.forEach(id => {
+                    const s = db.st[id]; const card = document.getElementById(`card-${id}`); const sub = document.getElementById(`sub-${id}`);
+                    card.className = 'tv-card'; 
+                    if(s.s) { card.classList.add('st-warn'); sub.innerText = s.reason || 'WSPARCIE'; } 
+                    else if(db.isDown && !s.r) { card.classList.add('st-err'); sub.innerText = 'OPÓŹNIENIE'; }
+                    else if(s.r) { card.classList.add('st-ok'); sub.innerText = 'ZROBIONE'; }
+                    else { sub.innerText = 'W TOKU'; }
+                });
+
+                const newLogsHTML = db.logs.map(l => `<div class="log-item ${l.type === 'alert' ? 'alert' : ''}"><span class="log-time">${l.t}</span> <span style="color: var(--col-text); font-weight: 600;">${l.m}</span>${l.d ? `<span class="log-detail">${l.d}</span>` : ''}</div>`).join('');
+                const logContainer = document.getElementById('tv-logs');
+                if (logContainer.innerHTML !== newLogsHTML) logContainer.innerHTML = newLogsHTML;
+
+                if (db.cycleTimes) {
+                    const cycleHTML = db.cycleTimes.map(c => `<div class="log-item" style="border-left-color: var(--col-yellow);"><span class="log-time">${c.ts}</span> <span style="color: var(--col-text); font-weight: 600;">${c.s} / Takt ${c.t} / <span style="color: var(--col-yellow)">${c.m}</span></span></div>`).join('');
+                    const cycleContainer = document.getElementById('tv-cycle-logs');
+                    if (cycleContainer.innerHTML !== cycleHTML) cycleContainer.innerHTML = cycleHTML;
+                }
+            },
+            op: (db, tSec, dSec) => {
+                document.getElementById('op-takt').innerText = fmt(tSec);
+                document.getElementById('op-down').innerText = fmt(dSec);
+                document.getElementById('op-goal-lbl').innerText = `Wykonano (Cel: ${db.goal})`;
+                document.getElementById('op-count').innerText = `${db.count}/${db.goal}`;
+                
+                const s = db.st[currentUser];
+                const bOk = document.getElementById('btn-ok'); const bSup = document.getElementById('btn-help');
+                
+                if(!db.shiftActive) {
+                    bOk.innerHTML = `ZMIANA ZATRZYMANA<div class='btn-sub'>Poczekaj na rozpoczęcie zmiany</div>`; bOk.disabled = true;
+                } else if(db.isBreak) {
+                    bOk.innerHTML = `PRZERWA<div class='btn-sub'>Odpocznij, czas jest zatrzymany</div>`; bOk.disabled = true;
+                } else if(s.r) {
+                    bOk.innerHTML = `OCZEKIWANIE...<div class='btn-sub'>Czekamy na zamknięcie cyklu na linii</div>`; bOk.disabled = true; 
+                } else { 
+                    bOk.innerHTML = `POTWIERDŹ OK<div class='btn-sub'>Zakończ cykl jako prawidłowy</div>`; bOk.disabled = false; 
+                }
+
+                if(s.s) { bSup.classList.add('active'); bSup.innerHTML = `<i class='material-icons'>close</i>Anuluj Wsparcie<div class='btn-sub'>Zgłoszono: ${s.reason}</div>`; }
+                else { bSup.classList.remove('active'); bSup.innerHTML = `<i class='material-icons'>support_agent</i>Wezwij Wsparcie`; }
+            },
+            shift: (db) => {
+                const stEl = document.getElementById('shift-status');
+                const elEl = document.getElementById('shift-elapsed');
+                if (stEl && elEl) {
+                    let elapsed = 0;
+                    if (db.shiftStart) {
+                        const end = db.shiftActive ? Date.now() : (db.shiftStopTime || db.shiftStart);
+                        elapsed = Math.max(0, Math.floor((end - db.shiftStart) / 1000));
+                    }
+                    elEl.innerText = fmtHMS(elapsed);
+                    if (db.shiftActive) { stEl.innerText = 'AKTYWNA'; stEl.style.color = 'var(--status-ok)'; }
+                    else { stEl.innerText = db.shiftStart ? 'ZATRZYMANA' : 'NIE ROZPOCZĘTA'; stEl.style.color = 'var(--status-nok)'; }
+                }
+                const pl = document.getElementById('planner-list');
+                if (pl) {
+                    const entries = db.planner || [];
+                    const html = entries.length ? entries.map(e => {
+                        const badge = e.status === 'started' ? `<span style="color:var(--status-ok); font-weight:700;">wystartowano</span>`
+                                    : e.status === 'missed' ? `<span style="color:var(--col-muted); font-weight:700;">pominięto</span>`
+                                    : `<span style="color:var(--col-yellow); font-weight:700;">oczekuje</span>`;
+                        return `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:8px; padding:8px 12px;"><div><div style="font-weight:700;">${e.date} &nbsp;·&nbsp; ${e.time}</div><div style="font-size:0.72rem; margin-top:2px;">${badge}</div></div><i class="material-icons" style="cursor:pointer; color:var(--col-muted);" title="Usuń" onclick="Logic.plannerRemove('${e.id}')">delete</i></div>`;
+                    }).join('') : `<div style="font-size:0.8rem; color:var(--col-muted);">Brak zaplanowanych startów.</div>`;
+                    if (pl.innerHTML !== html) pl.innerHTML = html;
+                }
+            }
+        };
+
+        const UI = { switch: (id) => { document.querySelectorAll('body > div.hidden, body > div[id^="view-"]').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); Render.all(); } };
+        const modals = { open: (id) => { document.getElementById(`modal-${id}`).classList.add('show'); }, close: (id) => { document.getElementById(`modal-${id}`).classList.remove('show'); } };
+
+        // NOWOŚĆ: ostylowane okno dialogowe (zamiast natywnych confirm/alert). Zwraca Promise<boolean>.
+        const Dialog = {
+            _resolve: null,
+            _onKey: null,
+            show: (message, opts) => {
+                opts = opts || {};
+                return new Promise((resolve) => {
+                    Dialog._resolve = resolve;
+                    document.getElementById('dialog-title').innerText = opts.title || 'Potwierdzenie';
+                    document.getElementById('dialog-msg').innerText = message;
+                    const ok = document.getElementById('dialog-ok');
+                    const cancel = document.getElementById('dialog-cancel');
+                    ok.innerText = opts.okText || (opts.alert ? 'OK' : 'Potwierdź');
+                    ok.className = 'btn-action ' + (opts.danger ? 'danger' : 'primary');
+                    cancel.style.display = opts.alert ? 'none' : '';
+                    document.getElementById('modal-dialog').classList.add('show');
+                    setTimeout(() => { try { ok.focus(); } catch (e) {} }, 50);
+                    Dialog._onKey = (e) => {
+                        if (e.key === 'Escape') { e.preventDefault(); Dialog._close(false); }
+                        else if (e.key === 'Enter') { e.preventDefault(); Dialog._close(true); }
+                    };
+                    document.addEventListener('keydown', Dialog._onKey);
+                });
+            },
+            confirm: (message, opts) => Dialog.show(message, opts || {}),
+            alert: (message, opts) => Dialog.show(message, Object.assign({ alert: true }, opts || {})),
+            _close: (result) => {
+                document.getElementById('modal-dialog').classList.remove('show');
+                if (Dialog._onKey) { document.removeEventListener('keydown', Dialog._onKey); Dialog._onKey = null; }
+                const r = Dialog._resolve; Dialog._resolve = null;
+                if (r) r(result);
+            }
+        };
+        function fmt(s) { return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
+        function fmtHMS(s) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), x = s%60; return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${x.toString().padStart(2,'0')}`; }
+
+        // ===== Eksport pomiarów do .xlsx — czysty JS, bez bibliotek, działa offline =====
+        // Buduje prawidłowy plik OOXML jako nieskompresowany ZIP (metoda "stored") + CRC32.
+        const Exporter = (function () {
+            const CRC = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
+            const crc32 = (b) => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+            const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+            const col = (n) => { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+            const cell = (ref, v, bold) => { const s = bold ? ' s="1"' : ''; return (typeof v === 'number' && isFinite(v)) ? `<c r="${ref}"${s}><v>${v}</v></c>` : `<c r="${ref}"${s} t="inlineStr"><is><t>${esc(v)}</t></is></c>`; };
+            const row = (r, cells, bold) => `<row r="${r}">${cells.map((v, i) => cell(col(i + 1) + r, v, bold)).join('')}</row>`;
+            const sheet = (headers, data) => { let b = row(1, headers, true); data.forEach((rw, i) => b += row(i + 2, rw, false)); return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${b}</sheetData></worksheet>`; };
+            const u16 = (n) => new Uint8Array([n & 0xFF, (n >>> 8) & 0xFF]);
+            const u32 = (n) => new Uint8Array([n & 0xFF, (n >>> 8) & 0xFF, (n >>> 16) & 0xFF, (n >>> 24) & 0xFF]);
+            const cat = (...a) => { let L = a.reduce((s, x) => s + x.length, 0), r = new Uint8Array(L), o = 0; for (const x of a) { r.set(x, o); o += x.length; } return r; };
+            function zip(files) {
+                const enc = new TextEncoder(); const parts = []; const cen = []; let off = 0;
+                const push = (u) => { parts.push(u); off += u.length; };
+                for (const f of files) {
+                    const nb = enc.encode(f.name), data = f.data, crc = crc32(data), at = off;
+                    push(cat(u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0), u32(crc), u32(data.length), u32(data.length), u16(nb.length), u16(0)));
+                    push(nb); push(data);
+                    cen.push({ nb, crc, size: data.length, at });
+                }
+                const cdStart = off;
+                for (const c of cen) { push(cat(u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0), u32(c.crc), u32(c.size), u32(c.size), u16(c.nb.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(c.at))); push(c.nb); }
+                push(cat(u32(0x06054b50), u16(0), u16(0), u16(cen.length), u16(cen.length), u32(off - cdStart), u32(cdStart), u16(0)));
+                let L = parts.reduce((s, x) => s + x.length, 0), out = new Uint8Array(L), o = 0; for (const x of parts) { out.set(x, o); o += x.length; } return out;
+            }
+            const CT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+            const RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+            const WB = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Czasy wykonania" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+            const WBR = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+            const STY = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+            function makeXlsx(headers, data) {
+                const enc = new TextEncoder();
+                return zip([
+                    { name: '[Content_Types].xml', data: enc.encode(CT) },
+                    { name: '_rels/.rels', data: enc.encode(RELS) },
+                    { name: 'xl/workbook.xml', data: enc.encode(WB) },
+                    { name: 'xl/_rels/workbook.xml.rels', data: enc.encode(WBR) },
+                    { name: 'xl/styles.xml', data: enc.encode(STY) },
+                    { name: 'xl/worksheets/sheet1.xml', data: enc.encode(sheet(headers, data)) },
+                ]);
+            }
+            function downloadCycles(cycleTimes) {
+                const headers = ['Lp.', 'Stanowisko', 'Takt', 'Czas wykonania', 'Czas [s]', 'Godzina'];
+                const ordered = (cycleTimes || []).slice().reverse(); // chronologicznie: od najstarszego
+                const secs = (m) => { const x = /(\d+)m\s*(\d+)s/.exec(m || ''); return x ? (+x[1] * 60 + +x[2]) : ''; };
+                const data = ordered.map((c, i) => [i + 1, c.s, c.t, c.m, secs(c.m), c.ts]);
+                const bytes = makeXlsx(headers, data);
+                const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const d = new Date(), p = (n) => String(n).padStart(2, '0');
+                const fname = `andon_czasy_${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.xlsx`;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = fname;
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1500);
+                return { count: data.length, fname };
+            }
+            return { makeXlsx, downloadCycles };
+        })();
+
+        setInterval(() => { if(!document.getElementById('view-login').classList.contains('show') && document.getElementById('view-login').classList.contains('hidden')) Render.all(); }, 1000);
+    
+        // NOWOŚĆ: Logika trybu pełnoekranowego (Fullscreen API)
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Błąd próby włączenia pełnego ekranu: ${err.message}`);
+                });
+                document.getElementById('fs-icon').innerText = 'fullscreen_exit';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    document.getElementById('fs-icon').innerText = 'fullscreen';
+                }
+            }
+        }
+    
+    </script>
+</body>
+</html>
