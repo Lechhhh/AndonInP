@@ -1,0 +1,30 @@
+# Zależności Node.js
+node_modules/
+client/node_modules/
+
+# Sekrety i konfiguracja lokalna
+.env
+.env.*
+!.env.example
+
+# Stan aplikacji
+andon_state.json
+andon_state.json.tmp
+
+# Gotowe pliki i katalogi kompilacji
+dist/
+client/dist/
+build/
+*.exe
+*.7z
+
+# Logi
+*.log
+debug.log
+npm-debug.log*
+
+# Pliki systemowe i edytorów
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

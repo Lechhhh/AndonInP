@@ -1,0 +1,16 @@
+{
+  "name": "andon-client",
+  "version": "1.0.0",
+  "description": "Klient desktop systemu Andon (Electron) — łączy się z serwerem Andon w sieci lokalnej",
+  "main": "main.js",
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-packager . AndonClient --platform=win32 --arch=x64 --out=dist --overwrite --prune=true"
+  },
+  "devDependencies": {
+    "electron": "latest",
+    "@electron/packager": "latest"
+  }
+}
