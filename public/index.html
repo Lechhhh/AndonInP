@@ -790,7 +790,7 @@ function setTheme(theme) {
             callSupport: (reason, isMaterialShortage = false) => {
                 let comment = isMaterialShortage ? document.getElementById('support-comment').value.trim() : '';
                 socket.emit('callSupport', { reason, comment }, result => {
-                    if (result && result.ok) { Logic.closeSupportModal(); showNotification('success', 'Zgłoszenie wysłane', 'Wiadomość dostarczona na kanał Teams.'); }
+                    if (result && result.ok) { Logic.closeSupportModal(); showNotification('success', 'Zgłoszenie wysłane', 'Wiadomość dostarczona na kanał Discord.'); }
                     else showNotification('error', 'Nie wysłano zgłoszenia', result && result.error ? result.error : 'Spróbuj ponownie lub zawiadom brygadzistę osobiście.');
                 });
             },
