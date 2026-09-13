@@ -51,6 +51,7 @@ let DB = {
     logs: [],
     isBreak: false,
     breakStart: null,
+    breakOverlayDisabled: false,
     cycleStart: Date.now(), // Stoper cyklu
     cycleTimes: [],         // Historia czasów
     // NOWOŚĆ: sterowanie czasem pracy zmiany
@@ -80,6 +81,29 @@ function loadState() {
             if (!Array.isArray(DB.logs)) DB.logs = [];
             if (!Array.isArray(DB.cycleTimes)) DB.cycleTimes = [];
             if (!Number.isInteger(DB.netShiftMins) || DB.netShiftMins < 1) DB.netShiftMins = Math.max(1, DB.taktMins * DB.goal) || CFG.netShiftMins;
+            if (typeof DB.breakOverlayDisabled !== 'boolean') DB.breakOverlayDisabled = false;
+
+            // Aktywna zmiana nie może automatycznie przejść na kolejny dzień po restarcie hostingu.
+            if (DB.shiftActive && DB.shiftStart) {
+                const started = new Date(DB.shiftStart);
+                const now = new Date();
+                const sameDay = started.getFullYear() === now.getFullYear()
+                    && started.getMonth() === now.getMonth()
+                    && started.getDate() === now.getDate();
+                if (!sameDay) {
+                    DB.shiftActive = false;
+                    DB.shiftStopTime = Date.now();
+                    DB.isDown = false;
+                    DB.downStart = null;
+                    DB.isBreak = false;
+                    DB.breakStart = null;
+                    DB.shiftStart = null;
+                    DB.cycleStart = Date.now();
+                    DB.target = Date.now() + (DB.taktMins * 60000);
+                    addLog('Poprzednia zmiana została automatycznie zamknięta', 'Wykryto zapis aktywnej zmiany z wcześniejszego dnia.', 'info');
+                    saveState();
+                }
+            }
             console.log('Wczytano zapisany stan z', STATE_FILE);
         }
     } catch (e) { console.error('Błąd wczytywania stanu:', e.message); }
@@ -121,6 +145,8 @@ function startShift(reason) {
     DB.accDown = 0;
     DB.isDown = false;
     DB.downStart = null;
+    DB.isBreak = false;
+    DB.breakStart = null;
     DB.cycleStart = Date.now();
     DB.cycleTimes = [];
     CFG.stations.forEach(id => { DB.st[id].r = false; DB.st[id].s = false; DB.st[id].reason = null; });
@@ -267,11 +293,25 @@ io.on('connection', (socket) => {
         DB.isDown = false;
         addLog(`Brygadzista ustawił cel: ${goal} szt. (Czas: ${time} min)`, `Nowy takt: ${DB.taktMins} min`, 'info');
         broadcast();
+        if (typeof ack === 'function') ack({ ok: true, goal: DB.goal, time: DB.netShiftMins, taktMins: DB.taktMins });
     });
 
     // NOWOŚĆ: Start / Stop zmiany (czas pracy)
-    socket.on('shiftStart', () => { if (!authorized(socket, ['admin'])) return; startShift('Zmiana rozpoczęta ręcznie'); broadcast(); });
-    socket.on('shiftStop', () => { if (!authorized(socket, ['admin'])) return; stopShift('Zmiana zatrzymana ręcznie'); broadcast(); });
+    socket.on('shiftStart', (data, ack) => { if (!authorized(socket, ['admin'], ack)) return; startShift('Zmiana rozpoczęta ręcznie'); broadcast(); if (typeof ack === 'function') ack({ ok: true }); });
+    socket.on('shiftStop', (data, ack) => { if (!authorized(socket, ['admin'], ack)) return; stopShift('Zmiana zatrzymana ręcznie'); broadcast(); if (typeof ack === 'function') ack({ ok: true }); });
+
+    // Awaryjne ukrycie nakładki przerwy, np. na czas prezentacji.
+    socket.on('setBreakOverlayDisabled', (disabled, ack) => {
+        if (!authorized(socket, ['admin'], ack)) return;
+        DB.breakOverlayDisabled = Boolean(disabled);
+        addLog(
+            DB.breakOverlayDisabled ? 'Nakładka przerwy została wyłączona' : 'Nakładka przerwy została włączona',
+            'Zmiana wykonana z panelu brygadzisty.',
+            'info'
+        );
+        broadcast();
+        if (typeof ack === 'function') ack({ ok: true, disabled: DB.breakOverlayDisabled });
+    });
 
     // NOWOŚĆ: Planner
     socket.on('plannerAdd', (data) => {

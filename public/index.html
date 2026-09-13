@@ -512,6 +512,14 @@
                 </div>
             </div>
 
+            <div class="input-group" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <label>Nakładka przerwy na Dashboardzie TV</label>
+                <div id="break-overlay-state" style="font-size: 0.8rem; color: var(--col-muted); margin-bottom: 10px;">Nakładka jest włączona.</div>
+                <button id="btn-break-overlay" class="btn-action danger" style="margin-top:0; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="Logic.toggleBreakOverlay()">
+                    <i class="material-icons">visibility_off</i> Awaryjnie wyłącz nakładkę przerwy
+                </button>
+            </div>
+
             <!-- NOWOŚĆ: Planner czasu pracy (automatyczny start) -->
             <div class="input-group" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
                 <label>Planner czasu pracy — automatyczny start</label>
@@ -841,8 +849,11 @@ saveAdminSettings: () => {
                 
                 if(newGoal > 0 && newTime > 0) {
                     socket.emit('adminSettings', { goal: newGoal, time: newTime }, result => {
-                        if (result && result.ok) modals.close('admin');
-                        else showNotification('error', 'Nie zapisano ustawień', result && result.error ? result.error : 'Sprawdź dane.');
+                        if (result && result.ok) {
+                            showNotification('success', 'Ustawienia zapisane', `Cel: ${result.goal} szt., czas netto: ${result.time} min, takt: ${result.taktMins} min.`);
+                        } else {
+                            showNotification('error', 'Nie zapisano ustawień', result && result.error ? result.error : 'Sprawdź dane.');
+                        }
                     });
                 }
             },
@@ -858,8 +869,18 @@ saveAdminSettings: () => {
                     if (msg) { msg.style.color = 'var(--status-nok)'; msg.innerText = 'Błąd podczas generowania pliku .xlsx.'; }
                 }
             },
-            shiftStart: () => { Dialog.confirm('Rozpocząć nową zmianę? Bieżące liczniki (wykonano, przestój, czasy cykli) zostaną wyzerowane.', { title: 'Rozpoczęcie zmiany', okText: 'Rozpocznij' }).then(ok => { if (ok) socket.emit('shiftStart'); }); },
-            shiftStop: () => { Dialog.confirm('Zatrzymać zmianę? Czas pracy i liczniki zostaną zamrożone.', { title: 'Zatrzymanie zmiany', okText: 'Zatrzymaj', danger: true }).then(ok => { if (ok) socket.emit('shiftStop'); }); },
+            shiftStart: () => { Dialog.confirm('Rozpocząć nową zmianę? Bieżące liczniki (wykonano, przestój, czasy cykli) zostaną wyzerowane.', { title: 'Rozpoczęcie zmiany', okText: 'Rozpocznij' }).then(ok => { if (ok) socket.emit('shiftStart', null, result => { if (result && result.ok) showNotification('success', 'Zmiana rozpoczęta', 'Czas zmiany i cyklu jest liczony od teraz.'); else showNotification('error', 'Nie rozpoczęto zmiany', result && result.error ? result.error : 'Spróbuj ponownie.'); }); }); },
+            shiftStop: () => { Dialog.confirm('Zatrzymać zmianę? Czas pracy i liczniki zostaną zamrożone.', { title: 'Zatrzymanie zmiany', okText: 'Zatrzymaj', danger: true }).then(ok => { if (ok) socket.emit('shiftStop', null, result => { if (result && result.ok) showNotification('success', 'Zmiana zatrzymana', 'Czas pracy został zatrzymany.'); else showNotification('error', 'Nie zatrzymano zmiany', result && result.error ? result.error : 'Spróbuj ponownie.'); }); }); },
+            toggleBreakOverlay: () => {
+                const disabled = !(localDB && localDB.breakOverlayDisabled);
+                socket.emit('setBreakOverlayDisabled', disabled, result => {
+                    if (result && result.ok) {
+                        showNotification('success', disabled ? 'Nakładka przerwy wyłączona' : 'Nakładka przerwy włączona', disabled ? 'Dashboard TV nie pokaże pełnoekranowej nakładki przerwy.' : 'Automatyczna nakładka przerwy znów jest aktywna.');
+                    } else {
+                        showNotification('error', 'Nie zmieniono ustawienia', result && result.error ? result.error : 'Spróbuj ponownie.');
+                    }
+                });
+            },
             plannerAdd: () => {
                 const d = document.getElementById('planner-date').value;
                 const t = document.getElementById('planner-time').value;
@@ -915,7 +936,7 @@ saveAdminSettings: () => {
                 document.getElementById('tv-count').innerText = `${db.count}/${db.goal}`;
                 
                 const overlay = document.getElementById('tv-break-overlay');
-                if(bStat.active && db.shiftActive && currentUser === 'tv') {
+                if(bStat.active && db.shiftActive && currentUser === 'tv' && !db.breakOverlayDisabled) {
                     overlay.classList.remove('hidden');
                     document.getElementById('overlay-title').innerText = bStat.name;
                     document.getElementById('overlay-icon').innerText = bStat.icon;
@@ -986,6 +1007,16 @@ saveAdminSettings: () => {
                     if (db.shiftActive) { stEl.innerText = 'AKTYWNA'; stEl.style.color = 'var(--status-ok)'; }
                     else { stEl.innerText = db.shiftStart ? 'ZATRZYMANA' : 'NIE ROZPOCZĘTA'; stEl.style.color = 'var(--status-nok)'; }
                 }
+                const overlayState = document.getElementById('break-overlay-state');
+                const overlayButton = document.getElementById('btn-break-overlay');
+                if (overlayState && overlayButton) {
+                    const disabled = Boolean(db.breakOverlayDisabled);
+                    overlayState.innerText = disabled ? 'Nakładka jest wyłączona. Przerwy nadal są liczone, ale ekran TV nie jest zasłaniany.' : 'Nakładka jest włączona i pokaże się automatycznie podczas przerwy.';
+                    overlayState.style.color = disabled ? 'var(--status-warn)' : 'var(--status-ok)';
+                    overlayButton.className = 'btn-action ' + (disabled ? 'primary' : 'danger');
+                    overlayButton.innerHTML = disabled ? '<i class="material-icons">visibility</i> Włącz nakładkę przerwy' : '<i class="material-icons">visibility_off</i> Awaryjnie wyłącz nakładkę przerwy';
+                }
+
                 const pl = document.getElementById('planner-list');
                 if (pl) {
                     const entries = db.planner || [];
