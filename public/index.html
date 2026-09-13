@@ -345,7 +345,7 @@
 
     <img id="global-logo" src="logo.png" alt="InPost Logo">
 
-    <div id="connection-banner" class="connection-banner" role="status" aria-live="polite">Brak połączenia z serwerem - dane mogą być nieaktualne</div>
+    <div id="connection-banner" class="connection-banner hidden" role="status" aria-live="polite">Brak połączenia z serwerem - dane mogą być nieaktualne</div>
     <div id="teams-toast" role="status" aria-live="polite">
         <i class="material-icons" id="toast-icon">notifications_active</i>
         <div><div class="tt-text" id="toast-title">Powiadomienie</div><div class="tt-sub" id="toast-message"></div></div>
@@ -605,11 +605,44 @@
         const CFG = { stations: ['x0','x1','x2','x3','x4'] };
 
         const connectionBanner = document.getElementById('connection-banner');
-        const setConnected = connected => connectionBanner && connectionBanner.classList.toggle('hidden', connected);
-        socket.on('connect', () => setConnected(true));
-        socket.on('disconnect', () => { setConnected(false); if (currentUser) { currentUser = null; currentUserName = null; UI.switch('view-login'); document.getElementById('l-msg').innerText = 'Połączenie zostało przerwane. Zaloguj się ponownie po jego przywróceniu.'; } });
-        socket.on('connect_error', () => setConnected(false));
-        setConnected(Boolean(socket.connected));
+        let hasConnectedOnce = false;
+        let disconnectBannerTimer = null;
+
+        function hideConnectionBanner() {
+            clearTimeout(disconnectBannerTimer);
+            if (connectionBanner) connectionBanner.classList.add('hidden');
+        }
+
+        function showConnectionBannerAfterDelay() {
+            clearTimeout(disconnectBannerTimer);
+
+            // Nie pokazuj błędu podczas pierwszego łączenia po wejściu lub odświeżeniu strony.
+            if (!hasConnectedOnce || !connectionBanner) return;
+
+            disconnectBannerTimer = setTimeout(() => {
+                if (!socket.connected) connectionBanner.classList.remove('hidden');
+            }, 3000);
+        }
+
+        socket.on('connect', () => {
+            hasConnectedOnce = true;
+            hideConnectionBanner();
+        });
+
+        socket.on('disconnect', () => {
+            showConnectionBannerAfterDelay();
+
+            if (currentUser) {
+                currentUser = null;
+                currentUserName = null;
+                UI.switch('view-login');
+                document.getElementById('l-msg').innerText = 'Połączenie zostało przerwane. Zaloguj się ponownie po jego przywróceniu.';
+            }
+        });
+
+        socket.on('connect_error', () => {
+            showConnectionBannerAfterDelay();
+        });
 
         socket.on('sync', (serverState) => {
             const prev = localDB;
