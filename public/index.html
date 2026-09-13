@@ -566,7 +566,7 @@
                     DASHBOARD
                     <div style="display: flex; gap: 10px;">
                         <button class="btn-settings" onclick="toggleFullScreen()" title="Pełny Ekran"><i class="material-icons" id="fs-icon">fullscreen</i></button>
-                        <button id="btn-admin-settings" class="btn-settings hidden" onclick="modals.open('admin')" title="Ustawienia Linii"><i class="material-icons">settings</i></button>
+                        <button id="btn-dashboard-settings" class="btn-settings hidden" onclick="Logic.openDashboardSettings()" title="Opcje"><i class="material-icons">settings</i></button>
                         <button class="btn-settings" onclick="document.getElementById('tv-sidebar').classList.add('open')" title="Dziennik Zdarzeń"><i class="material-icons">history</i></button>
                     </div>
                 </div>
@@ -635,6 +635,9 @@
                 </div>
             </div>
             <button class="btn-action primary" onclick="modals.close('op-settings')">Zapisz i Zamknij</button>
+            <button class="btn-action danger" onclick="location.reload()" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                <i class="material-icons">logout</i> Wyloguj i zmień konto
+            </button>
         </div>
     </div>
 
@@ -971,9 +974,10 @@ function setTheme(theme) {
                 currentUser = result.user;
                 currentUserName = result.userName;
 
-                const adminSettingsButton = document.getElementById('btn-admin-settings');
-                if (adminSettingsButton) {
-                    adminSettingsButton.classList.toggle('hidden', station !== 'admin');
+                const dashboardSettingsButton = document.getElementById('btn-dashboard-settings');
+                if (dashboardSettingsButton) {
+                    dashboardSettingsButton.classList.toggle('hidden', station !== 'admin' && station !== 'tv');
+                    dashboardSettingsButton.title = station === 'admin' ? 'Ustawienia linii' : 'Opcje dashboardu';
                 }
 
                 if (station === 'tv' || station === 'admin') { primeSupportSound(); UI.switch('view-tv'); }
@@ -982,6 +986,10 @@ function setTheme(theme) {
         } };
 
         const Logic = {
+            openDashboardSettings: () => {
+                if (currentUser === 'admin') modals.open('admin');
+                else if (currentUser === 'tv') modals.open('op-settings');
+            },
             actionOK: () => {
                 const btn = document.getElementById('btn-ok');
                 if (btn) btn.disabled = true;
