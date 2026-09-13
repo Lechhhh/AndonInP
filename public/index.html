@@ -566,7 +566,7 @@
                     DASHBOARD
                     <div style="display: flex; gap: 10px;">
                         <button class="btn-settings" onclick="toggleFullScreen()" title="Pełny Ekran"><i class="material-icons" id="fs-icon">fullscreen</i></button>
-                        <button class="btn-settings" onclick="modals.open('admin')" title="Ustawienia Linii"><i class="material-icons">settings</i></button>
+                        <button id="btn-admin-settings" class="btn-settings hidden" onclick="modals.open('admin')" title="Ustawienia Linii"><i class="material-icons">settings</i></button>
                         <button class="btn-settings" onclick="document.getElementById('tv-sidebar').classList.add('open')" title="Dziennik Zdarzeń"><i class="material-icons">history</i></button>
                     </div>
                 </div>
@@ -968,7 +968,14 @@ function setTheme(theme) {
             socket.emit('login', { station, password }, result => {
                 document.getElementById('password-input').value = '';
                 if (!result || !result.ok) { err.innerText = result && result.error ? result.error : 'Nie udało się zalogować.'; return; }
-                currentUser = result.user; currentUserName = result.userName;
+                currentUser = result.user;
+                currentUserName = result.userName;
+
+                const adminSettingsButton = document.getElementById('btn-admin-settings');
+                if (adminSettingsButton) {
+                    adminSettingsButton.classList.toggle('hidden', station !== 'admin');
+                }
+
                 if (station === 'tv' || station === 'admin') { primeSupportSound(); UI.switch('view-tv'); }
                 else { document.getElementById('op-title').innerText = station.toUpperCase(); document.getElementById('op-user-name').innerText = currentUserName; UI.switch('view-op'); }
             });
