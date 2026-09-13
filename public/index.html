@@ -339,6 +339,166 @@
             .btn-help { grid-column: 1; grid-row: 2; min-height: 88px; font-size: clamp(0.95rem, 2vw, 1.2rem); }
             .btn-doc { grid-column: 1; grid-row: 3; min-height: 88px; font-size: clamp(0.95rem, 2vw, 1.2rem); }
         }
+
+
+        /* --- MOBILNY DASHBOARD: SAFARI / TELEFONY / TABLETY --- */
+        @media screen and (max-width: 700px) {
+            html, body {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
+            #view-tv,
+            .tv-main,
+            .tv-top-bar,
+            .kpi-wrapper,
+            .tv-grid {
+                width: 100%;
+                min-width: 0;
+                max-width: 100%;
+            }
+
+            .tv-main {
+                padding: 16px;
+                padding-bottom: calc(24px + env(safe-area-inset-bottom));
+            }
+
+            .tv-top-bar {
+                display: block;
+                padding: 0 0 18px 0;
+                margin: 0 0 18px 0;
+            }
+
+            .title-main {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center;
+                width: 100%;
+                min-width: 0;
+                gap: 12px;
+                font-size: clamp(1.75rem, 8vw, 2.25rem);
+                line-height: 1;
+                white-space: nowrap;
+            }
+
+            .title-main > div {
+                display: grid !important;
+                grid-template-columns: repeat(3, 42px);
+                gap: 7px !important;
+                min-width: 0;
+            }
+
+            .btn-settings {
+                width: 42px;
+                height: 42px;
+                min-width: 42px;
+                padding: 0;
+            }
+
+            .btn-settings i {
+                font-size: 1.25rem;
+            }
+
+            .kpi-wrapper {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin: 18px 0 0 0;
+            }
+
+            .kpi-unit,
+            .kpi-unit:nth-child(n) {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center;
+                gap: 12px;
+                width: 100%;
+                min-width: 0;
+                padding: 13px 14px;
+                text-align: left;
+                background: var(--col-card);
+                border: 1px solid var(--border-color);
+                border-radius: 10px;
+                overflow: hidden;
+            }
+
+            .kpi-lbl {
+                min-width: 0;
+                margin: 0;
+                font-size: 0.68rem;
+                line-height: 1.3;
+                letter-spacing: 0.7px;
+                white-space: normal;
+                overflow-wrap: anywhere;
+            }
+
+            .kpi-val,
+            #tv-status {
+                min-width: 0;
+                max-width: 58vw;
+                margin: 0;
+                font-size: clamp(1.45rem, 7vw, 2rem);
+                line-height: 1;
+                text-align: right;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            #tv-status {
+                font-size: clamp(1.15rem, 5.7vw, 1.7rem);
+            }
+
+            .tv-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .tv-card {
+                min-width: 0;
+                min-height: 120px;
+                padding: 18px;
+            }
+
+            .tv-card-head {
+                font-size: 2.1rem;
+            }
+
+            #global-logo {
+                display: none !important;
+            }
+        }
+
+        @media screen and (max-width: 430px) {
+            .tv-main {
+                padding: 12px;
+            }
+
+            .title-main {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                font-size: 2rem;
+                white-space: normal;
+            }
+
+            .title-main > div {
+                grid-template-columns: repeat(3, 44px);
+                justify-content: start;
+            }
+
+            .btn-settings {
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+            }
+
+            .kpi-val,
+            #tv-status {
+                max-width: 55vw;
+            }
+        }
+
     </style>
 </head>
 <body>
