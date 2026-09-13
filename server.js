@@ -111,7 +111,8 @@ function loadState() {
 loadState();
 
 // zapis + rozgłoszenie do wszystkich ekranów
-function broadcast() { saveState(); io.emit('sync', DB); }
+function getSyncState() { return { ...DB, serverNow: Date.now() }; }
+function broadcast() { saveState(); io.emit('sync', getSyncState()); }
 
 function validInt(value, min, max) { return Number.isInteger(value) && value >= min && value <= max; }
 function validPlanner(date, time) {
@@ -194,7 +195,7 @@ io.on('connection', (socket) => {
     console.log('Nowe urządzenie podłączone:', socket.id);
 
     // Natychmiastowa synchronizacja nowego urządzenia z serwerem
-    socket.emit('sync', DB);
+    socket.emit('sync', getSyncState());
     socket.data.role = null;
     socket.data.user = null;
     socket.on('login', (data, ack) => {

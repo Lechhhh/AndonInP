@@ -608,6 +608,7 @@
             });
         }
         let localDB = null;
+        let serverClockOffset = 0;
         let currentUser = null; 
         let currentUserName = null;
         const CFG = { stations: ['x0','x1','x2','x3','x4'] };
@@ -654,6 +655,9 @@
 
         socket.on('sync', (serverState) => {
             const prev = localDB;
+            if (Number.isFinite(serverState.serverNow)) {
+                serverClockOffset = serverState.serverNow - Date.now();
+            }
             localDB = serverState;
             Render.all();
             maybePlaySupportSound(prev, serverState);
@@ -1000,7 +1004,8 @@ saveAdminSettings: () => {
                 if (stEl && elEl) {
                     let elapsed = 0;
                     if (db.shiftStart) {
-                        const end = db.shiftActive ? Date.now() : (db.shiftStopTime || db.shiftStart);
+                        const synchronizedNow = Date.now() + serverClockOffset;
+                        const end = db.shiftActive ? synchronizedNow : (db.shiftStopTime || db.shiftStart);
                         elapsed = Math.max(0, Math.floor((end - db.shiftStart) / 1000));
                     }
                     elEl.innerText = fmtHMS(elapsed);
