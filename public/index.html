@@ -2,9 +2,7 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#0A0A0B">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InPost Andon | System Produkcyjny</title>
     <script>const initialSavedTheme = localStorage.getItem('theme') || 'dark'; document.documentElement.setAttribute('data-theme', initialSavedTheme);</script>
     
@@ -341,142 +339,13 @@
             .btn-help { grid-column: 1; grid-row: 2; min-height: 88px; font-size: clamp(0.95rem, 2vw, 1.2rem); }
             .btn-doc { grid-column: 1; grid-row: 3; min-height: 88px; font-size: clamp(0.95rem, 2vw, 1.2rem); }
         }
-
-
-        /* --- OSTATECZNE POPRAWKI SAFARI / MOBILE --- */
-        html, body { width: 100%; max-width: 100%; }
-
-        @supports (-webkit-touch-callout: none) {
-            body { min-height: -webkit-fill-available; }
-            #view-login { min-height: -webkit-fill-available; }
-        }
-
-        @media (max-width: 900px) {
-            #view-tv { width: 100%; overflow-x: clip; }
-            .tv-main { width: 100%; min-width: 0; padding: 16px; }
-            .tv-top-bar {
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-                align-items: stretch;
-                gap: 18px;
-                padding: 0 0 18px 0;
-                margin: 0 0 18px 0;
-            }
-            .title-main {
-                width: 100%;
-                min-width: 0;
-                display: flex;
-                flex-wrap: nowrap;
-                align-items: center;
-                justify-content: space-between;
-                gap: 12px;
-                font-size: 32px;
-                white-space: nowrap;
-            }
-            .title-main > div {
-                display: flex !important;
-                flex: 0 0 auto;
-                gap: 8px !important;
-            }
-            .btn-settings {
-                width: 44px;
-                height: 44px;
-                min-width: 44px;
-                flex: 0 0 44px;
-                padding: 0;
-            }
-            .kpi-wrapper {
-                width: 100%;
-                min-width: 0;
-                margin: 0;
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 12px;
-            }
-            .kpi-unit,
-            .kpi-unit:nth-child(n) {
-                width: 100%;
-                min-width: 0;
-                text-align: left;
-                padding: 14px;
-                background: var(--col-card);
-                border: 1px solid var(--border-color);
-                border-radius: 10px;
-                overflow: hidden;
-            }
-            .kpi-lbl {
-                min-width: 0;
-                margin-bottom: 7px;
-                font-size: 11px;
-                line-height: 1.25;
-                letter-spacing: .7px;
-                white-space: normal;
-                overflow-wrap: anywhere;
-            }
-            .kpi-val {
-                min-width: 0;
-                max-width: 100%;
-                font-size: 30px;
-                line-height: 1.05;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            #tv-status { font-size: 23px; }
-            .tv-grid {
-                width: 100%;
-                min-width: 0;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 12px;
-            }
-            .tv-card { width: 100%; min-width: 0; min-height: 130px; padding: 16px; }
-        }
-
-        @media (max-width: 600px) {
-            #view-login {
-                width: 100%;
-                min-height: 100svh;
-                align-items: flex-start;
-                overflow-y: auto;
-                padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
-            }
-            .login-panel { width: 100%; max-width: 420px; padding: 36px 4px 24px; }
-            .login-logo { height: 56px; margin-bottom: 18px; }
-            .login-panel h1 { font-size: 34px; }
-            .login-panel p { margin-bottom: 30px; }
-            .title-main { font-size: 25px; }
-            .btn-settings { width: 40px; height: 40px; min-width: 40px; flex-basis: 40px; }
-            .btn-settings i { font-size: 21px; }
-            .kpi-wrapper { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-            .kpi-unit, .kpi-unit:nth-child(n) { padding: 12px; }
-            .kpi-lbl { font-size: 10px; letter-spacing: .55px; }
-            .kpi-val { font-size: 25px; }
-            #tv-status { font-size: 18px; }
-            .tv-grid { grid-template-columns: 1fr; gap: 12px; }
-            .tv-card { min-height: 118px; }
-            .connection-banner {
-                top: 0;
-                padding-top: calc(8px + env(safe-area-inset-top));
-                font-size: 12px;
-            }
-        }
-
-        @media (max-width: 420px) {
-            .title-main { font-size: 22px; gap: 8px; }
-            .title-main > div { gap: 6px !important; }
-            .btn-settings { width: 36px; height: 36px; min-width: 36px; flex-basis: 36px; }
-            .kpi-wrapper { grid-template-columns: 1fr; }
-            .kpi-val, #tv-status { font-size: 24px; overflow: visible; text-overflow: clip; }
-        }
-
     </style>
 </head>
 <body>
 
     <img id="global-logo" src="logo.png" alt="InPost Logo">
 
-    <div id="connection-banner" class="connection-banner hidden" role="status" aria-live="polite">Brak połączenia z serwerem - dane mogą być nieaktualne</div>
+    <div id="connection-banner" class="connection-banner" role="status" aria-live="polite">Brak połączenia z serwerem - dane mogą być nieaktualne</div>
     <div id="teams-toast" role="status" aria-live="polite">
         <i class="material-icons" id="toast-icon">notifications_active</i>
         <div><div class="tt-text" id="toast-title">Powiadomienie</div><div class="tt-sub" id="toast-message"></div></div>
@@ -494,21 +363,21 @@
                     <div class="custom-select-trigger" role="combobox" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-controls="station-options">
                         <div class="trigger-content">
                             <i class="material-icons opt-icon">precision_manufacturing</i>
-                            <span>Stanowisko Y0</span>
+                            <span>Stanowisko X0</span>
                         </div>
                         <i class="material-icons arrow">expand_more</i>
                     </div>
                     <div class="custom-options" id="station-options" role="listbox">
-                        <div class="custom-option selected" role="option" aria-selected="true" tabindex="-1" data-value="y0"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko Y0</span><span class="opt-sub">Linia Y</span></div></div>
-                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y1"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko Y1</span><span class="opt-sub">Linia Y</span></div></div>
-                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y2"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko Y2</span><span class="opt-sub">Linia Y</span></div></div>
-                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y3"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko Y3</span><span class="opt-sub">Linia Y</span></div></div>
-                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y4"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko Y4</span><span class="opt-sub">Linia Y</span></div></div>
+                        <div class="custom-option selected" role="option" aria-selected="true" tabindex="-1" data-value="x0"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X0</span><span class="opt-sub">Linia X</span></div></div>
+                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="x1"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X1</span><span class="opt-sub">Linia X</span></div></div>
+                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="x2"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X2</span><span class="opt-sub">Linia X</span></div></div>
+                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="x3"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X3</span><span class="opt-sub">Linia X</span></div></div>
+                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="x4"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X4</span><span class="opt-sub">Linia X</span></div></div>
                         <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="admin"><i class="material-icons opt-icon" style="color: var(--col-yellow)">admin_panel_settings</i><div class="opt-text"><span class="opt-title">Panel Brygadzisty</span><span class="opt-sub">Zarządzanie Linią</span></div></div>
                         <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="tv"><i class="material-icons opt-icon" style="color: var(--teams-col)">tv</i><div class="opt-text"><span class="opt-title">Główny Dashboard</span><span class="opt-sub">Ekran Informacyjny (TV)</span></div></div>
                     </div>
                 </div>
-                <input type="hidden" id="station-select" value="y0">
+                <input type="hidden" id="station-select" value="x0">
             </div>
 
             <div class="input-group" style="margin-top: 1.5rem;">
@@ -569,7 +438,7 @@
 
     <div id="view-op" class="hidden">
         <div class="op-header">
-            <div><div class="op-title" id="op-title">Y0</div></div>
+            <div><div class="op-title" id="op-title">X0</div></div>
             <div class="op-info">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                     <span class="op-user-name" id="op-user-name">Jan Kowalski</span>
@@ -733,41 +602,14 @@
         let localDB = null;
         let currentUser = null; 
         let currentUserName = null;
-        const CFG = { stations: ['y0','y1','y2','y3','y4'] };
+        const CFG = { stations: ['x0','x1','x2','x3','x4'] };
 
         const connectionBanner = document.getElementById('connection-banner');
-        let hasConnectedOnce = false;
-        let connectionWarningTimer = null;
-
-        function hideConnectionWarning() {
-            clearTimeout(connectionWarningTimer);
-            if (connectionBanner) connectionBanner.classList.add('hidden');
-        }
-
-        function scheduleConnectionWarning() {
-            clearTimeout(connectionWarningTimer);
-            if (!hasConnectedOnce || !connectionBanner) return;
-            connectionWarningTimer = setTimeout(() => {
-                if (!socket.connected) connectionBanner.classList.remove('hidden');
-            }, 3000);
-        }
-
-        socket.on('connect', () => {
-            hasConnectedOnce = true;
-            hideConnectionWarning();
-        });
-
-        socket.on('disconnect', () => {
-            scheduleConnectionWarning();
-            if (currentUser) {
-                currentUser = null;
-                currentUserName = null;
-                UI.switch('view-login');
-                document.getElementById('l-msg').innerText = 'Połączenie zostało przerwane. Zaloguj się ponownie po jego przywróceniu.';
-            }
-        });
-
-        socket.on('connect_error', () => scheduleConnectionWarning());
+        const setConnected = connected => connectionBanner && connectionBanner.classList.toggle('hidden', connected);
+        socket.on('connect', () => setConnected(true));
+        socket.on('disconnect', () => { setConnected(false); if (currentUser) { currentUser = null; currentUserName = null; UI.switch('view-login'); document.getElementById('l-msg').innerText = 'Połączenie zostało przerwane. Zaloguj się ponownie po jego przywróceniu.'; } });
+        socket.on('connect_error', () => setConnected(false));
+        setConnected(Boolean(socket.connected));
 
         socket.on('sync', (serverState) => {
             const prev = localDB;
@@ -798,7 +640,7 @@
         }
         function maybePlaySupportSound(prev, cur) {
             // Tylko dashboard TV / brygadzista (oba to widok view-tv); operatorzy nie odtwarzają.
-            if (currentUser !== 'tv') return;
+            if (!(currentUser === 'tv' || currentUser === 'admin')) return;
             if (!cur || !cur.st) return;
             for (const id of CFG.stations) {
                 const nowS = !!(cur.st[id] && cur.st[id].s);
@@ -922,7 +764,7 @@ function setTheme(theme) {
                 document.getElementById('password-input').value = '';
                 if (!result || !result.ok) { err.innerText = result && result.error ? result.error : 'Nie udało się zalogować.'; return; }
                 currentUser = result.user; currentUserName = result.userName;
-                if (station === 'tv' || station === 'admin') { UI.switch('view-tv'); }
+                if (station === 'tv' || station === 'admin') { primeSupportSound(); UI.switch('view-tv'); }
                 else { document.getElementById('op-title').innerText = station.toUpperCase(); document.getElementById('op-user-name').innerText = currentUserName; UI.switch('view-op'); }
             });
         } };

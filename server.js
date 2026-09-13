@@ -30,7 +30,7 @@ const io = new Server(server);
 // Serwer udostępnia pliki z folderu "public"
 app.use(express.static('public'));
 
-const CFG = { stations: ['y0','y1','y2','y3','y4'], netShiftMins: 420 };
+const CFG = { stations: ['x0','x1','x2','x3','x4'], netShiftMins: 420 };
 const DISCORD_WEBHOOK_URL = String(process.env.DISCORD_WEBHOOK_URL || '').trim();
 const ADMIN_PASSWORD = String(process.env.ANDON_ADMIN_PASSWORD || 'admin');
 const OPERATOR_PASSWORD = String(process.env.ANDON_OPERATOR_PASSWORD || '123456');
