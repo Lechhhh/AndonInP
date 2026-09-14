@@ -543,9 +543,13 @@
                 align-content: stretch;
             }
             body.role-tv .tv-card {
-                min-height: clamp(260px, 34vh, 700px);
+                width: 100%;
+                min-width: 0;
+                min-height: 0;
+                aspect-ratio: 1 / 1;
                 padding: clamp(2rem, 2vw, 5rem);
                 border-radius: clamp(16px, 1vw, 32px);
+                align-self: start;
             }
             body.role-tv .tv-card-head {
                 font-size: clamp(4rem, 4.2vw, 10rem);
@@ -914,21 +918,34 @@
         let supportAudioUnlocked = false;
 
         function primeSupportSound(forceTvUnlock = false) {
-            // Pierwsze wywołanie następuje bezpośrednio w obsłudze kliknięcia logowania,
-            // zanim wróci odpowiedź z serwera. To zachowuje gest użytkownika na Smart TV.
             if (currentUser !== 'tv' && !forceTvUnlock) return;
             try {
-                supportAudio = new Audio('wssong.mp3?v=20260914');
-                supportAudio.preload = 'auto';
-                supportAudio.volume = 1;
-                supportAudio.load();
-
+                if (!supportAudio) {
+                    supportAudio = new Audio('wssong.mp3?v=20260914b');
+                    supportAudio.preload = 'auto';
+                    supportAudio.playsInline = true;
+                    supportAudio.load();
+                }
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (AudioCtx) {
                     supportAudioContext = supportAudioContext || new AudioCtx();
                     const resumed = supportAudioContext.resume();
                     if (resumed && resumed.then) resumed.then(() => { supportAudioUnlocked = true; }).catch(() => {});
                     else supportAudioUnlocked = true;
+                }
+                supportAudio.muted = true;
+                supportAudio.volume = 1;
+                const unlockPlay = supportAudio.play();
+                if (unlockPlay && unlockPlay.then) {
+                    unlockPlay.then(() => {
+                        supportAudio.pause();
+                        supportAudio.currentTime = 0;
+                        supportAudio.muted = false;
+                        supportAudioUnlocked = true;
+                    }).catch(err => {
+                        supportAudio.muted = false;
+                        console.warn('[Andon] Odblokowanie MP3 zostało odrzucone:', err && err.message);
+                    });
                 }
             } catch (e) {
                 console.warn('[Andon] Nie udało się przygotować audio:', e && e.message);
@@ -964,11 +981,14 @@
         function playSupportSound() {
             if (currentUser !== 'tv') return;
             try {
-                if (!supportAudio) primeSupportSound();
-                if (!supportAudio) { playFallbackSupportTone(); return; }
+                if (!supportAudio) {
+                    playFallbackSupportTone();
+                    return;
+                }
+                supportAudio.pause();
+                supportAudio.currentTime = 0;
                 supportAudio.muted = false;
                 supportAudio.volume = 1;
-                supportAudio.currentTime = 0;
                 const playback = supportAudio.play();
                 if (playback && playback.catch) {
                     playback.catch(err => {
@@ -1161,7 +1181,6 @@ function setTheme(theme) {
                 currentUserName = result.userName;
                 document.body.classList.toggle('role-tv', station === 'tv');
                 document.body.classList.toggle('role-admin', station === 'admin');
-                if (station === 'tv') primeSupportSound();
 
                 const dashboardSettingsButton = document.getElementById('btn-dashboard-settings');
                 if (dashboardSettingsButton) {
