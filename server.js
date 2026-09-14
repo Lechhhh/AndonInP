@@ -113,6 +113,9 @@ loadState();
 // zapis + rozgłoszenie do wszystkich ekranów
 function getSyncState() { return { ...DB, serverNow: Date.now() }; }
 function broadcast() { saveState(); io.emit('sync', getSyncState()); }
+// Niezależny impuls czasu utrzymuje liczniki na telewizorach, których przeglądarki
+// potrafią ograniczać lokalne setInterval. Nie zapisuje stanu na dysk.
+setInterval(() => io.emit('clock', { serverNow: Date.now() }), 1000);
 
 function validInt(value, min, max) { return Number.isInteger(value) && value >= min && value <= max; }
 function validPlanner(date, time) {

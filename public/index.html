@@ -499,6 +499,81 @@
             }
         }
 
+
+
+        /* --- DASHBOARD TV: DUZE EKRANY 1080p / 4K --- */
+        body.role-tv #view-tv { min-height: 100vh; }
+        body.role-tv .tv-main { width: 100%; }
+
+        @media screen and (min-width: 1600px) and (orientation: landscape) {
+            body.role-tv .tv-main {
+                padding: clamp(2rem, 2.2vw, 5.5rem);
+            }
+            body.role-tv .tv-top-bar {
+                gap: clamp(2rem, 3vw, 6rem);
+                margin-bottom: clamp(2rem, 2.5vw, 5rem);
+                padding-bottom: clamp(1.5rem, 1.7vw, 3.5rem);
+                padding-right: clamp(180px, 12vw, 460px);
+            }
+            body.role-tv .title-main {
+                font-size: clamp(3.5rem, 3.2vw, 7.5rem);
+                gap: clamp(1rem, 1.2vw, 2.5rem);
+            }
+            body.role-tv .btn-settings {
+                width: clamp(54px, 3vw, 112px);
+                height: clamp(54px, 3vw, 112px);
+                padding: 0;
+            }
+            body.role-tv .btn-settings i {
+                font-size: clamp(1.7rem, 1.6vw, 3.8rem);
+            }
+            body.role-tv .kpi-wrapper {
+                gap: clamp(2rem, 3vw, 7rem);
+            }
+            body.role-tv .kpi-lbl {
+                font-size: clamp(0.9rem, 0.85vw, 1.9rem);
+                margin-bottom: clamp(0.5rem, 0.55vw, 1.25rem);
+            }
+            body.role-tv .kpi-val {
+                font-size: clamp(3.2rem, 3vw, 7rem);
+            }
+            body.role-tv .tv-grid {
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: clamp(1.5rem, 1.7vw, 4rem);
+                align-content: stretch;
+            }
+            body.role-tv .tv-card {
+                min-height: clamp(260px, 34vh, 700px);
+                padding: clamp(2rem, 2vw, 5rem);
+                border-radius: clamp(16px, 1vw, 32px);
+            }
+            body.role-tv .tv-card-head {
+                font-size: clamp(4rem, 4.2vw, 10rem);
+            }
+            body.role-tv .tv-card-sub {
+                margin-top: clamp(1rem, 1.1vw, 2.5rem);
+                padding: clamp(0.55rem, 0.55vw, 1.2rem) clamp(1.1rem, 1.1vw, 2.4rem);
+                font-size: clamp(0.9rem, 0.85vw, 1.9rem);
+            }
+            body.role-tv #global-logo {
+                height: clamp(72px, 5vw, 180px);
+            }
+        }
+
+        /* Czytelny fokus dla pilota / klawiatury telewizora */
+        .custom-select-trigger:focus-visible,
+        .custom-option:focus-visible,
+        #password-input:focus-visible,
+        #login-button:focus-visible {
+            outline: 4px solid var(--col-yellow);
+            outline-offset: 4px;
+            box-shadow: 0 0 0 8px rgba(255, 204, 0, 0.18);
+        }
+        .custom-option:focus {
+            background: rgba(255, 204, 0, 0.14);
+            color: var(--col-yellow);
+        }
+
     </style>
 </head>
 <body>
@@ -545,7 +620,7 @@
                 <input type="password" id="password-input" class="inp-login" placeholder="Wprowadź hasło..." autofocus autocomplete="off">
             </div>
             
-            <button class="btn-action primary" onclick="Auth.login()" style="margin-top: 1.5rem; width: 100%; font-size: 1.1rem; font-weight: 800; padding: 1.2rem; border-radius: 8px;">
+            <button id="login-button" class="btn-action primary" onclick="Auth.login()" style="margin-top: 1.5rem; width: 100%; font-size: 1.1rem; font-weight: 800; padding: 1.2rem; border-radius: 8px;">
                 ZALOGUJ SIĘ
             </button>
             <div id="l-msg" style="color:var(--status-nok); margin-top:15px; font-weight:600; font-size:0.85rem; min-height:20px;"></div>
@@ -826,30 +901,89 @@
             maybePlaySupportSound(prev, serverState);
         });
 
-        // ===== Dźwięk wezwania wsparcia (odtwarzany na dashboardzie TV i w panelu brygadzisty) =====
+        socket.on('clock', payload => {
+            if (payload && Number.isFinite(payload.serverNow)) {
+                serverClockOffset = payload.serverNow - Date.now();
+                if (localDB && currentUser) Render.all();
+            }
+        });
+
+        // ===== Dźwięk wezwania wsparcia: tylko Dashboard TV =====
         let supportAudio = null;
-        function primeSupportSound() {
-            // Odblokowanie audio w ramach gestu użytkownika (kliknięcie logowania) — polityka autoplay przeglądarki.
+        let supportAudioContext = null;
+        let supportAudioUnlocked = false;
+
+        function primeSupportSound(forceTvUnlock = false) {
+            // Pierwsze wywołanie następuje bezpośrednio w obsłudze kliknięcia logowania,
+            // zanim wróci odpowiedź z serwera. To zachowuje gest użytkownika na Smart TV.
+            if (currentUser !== 'tv' && !forceTvUnlock) return;
             try {
-                supportAudio = new Audio('wssong.mp3');
-                supportAudio.muted = true;
-                const p = supportAudio.play();
-                if (p && p.then) p.then(() => { supportAudio.pause(); supportAudio.currentTime = 0; supportAudio.muted = false; }).catch(() => {});
-            } catch (e) { /* ignore */ }
+                supportAudio = new Audio('wssong.mp3?v=20260914');
+                supportAudio.preload = 'auto';
+                supportAudio.volume = 1;
+                supportAudio.load();
+
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) {
+                    supportAudioContext = supportAudioContext || new AudioCtx();
+                    const resumed = supportAudioContext.resume();
+                    if (resumed && resumed.then) resumed.then(() => { supportAudioUnlocked = true; }).catch(() => {});
+                    else supportAudioUnlocked = true;
+                }
+            } catch (e) {
+                console.warn('[Andon] Nie udało się przygotować audio:', e && e.message);
+            }
         }
+
+        function playFallbackSupportTone() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                supportAudioContext = supportAudioContext || new AudioCtx();
+                supportAudioContext.resume().then(() => {
+                    const now = supportAudioContext.currentTime;
+                    [0, 0.35, 0.7].forEach((delay, index) => {
+                        const osc = supportAudioContext.createOscillator();
+                        const gain = supportAudioContext.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.value = index === 1 ? 880 : 660;
+                        gain.gain.setValueAtTime(0.0001, now + delay);
+                        gain.gain.exponentialRampToValueAtTime(0.32, now + delay + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.24);
+                        osc.connect(gain);
+                        gain.connect(supportAudioContext.destination);
+                        osc.start(now + delay);
+                        osc.stop(now + delay + 0.26);
+                    });
+                }).catch(() => {});
+            } catch (e) {
+                console.warn('[Andon] Awaryjny sygnał audio:', e && e.message);
+            }
+        }
+
         function playSupportSound() {
+            if (currentUser !== 'tv') return;
             try {
-                if (!supportAudio) supportAudio = new Audio('wssong.mp3');
+                if (!supportAudio) primeSupportSound();
+                if (!supportAudio) { playFallbackSupportTone(); return; }
                 supportAudio.muted = false;
+                supportAudio.volume = 1;
                 supportAudio.currentTime = 0;
-                const p = supportAudio.play();
-                if (p && p.catch) p.catch(err => console.warn('[Andon] Nie można odtworzyć dźwięku wsparcia:', err && err.message));
-            } catch (e) { console.warn('[Andon] Audio:', e); }
+                const playback = supportAudio.play();
+                if (playback && playback.catch) {
+                    playback.catch(err => {
+                        console.warn('[Andon] Plik MP3 został zablokowany:', err && err.message);
+                        playFallbackSupportTone();
+                    });
+                }
+            } catch (e) {
+                console.warn('[Andon] Audio:', e && e.message);
+                playFallbackSupportTone();
+            }
         }
+
         function maybePlaySupportSound(prev, cur) {
-            // Tylko dashboard TV / brygadzista (oba to widok view-tv); operatorzy nie odtwarzają.
-            if (!(currentUser === 'tv' || currentUser === 'admin')) return;
-            if (!cur || !cur.st) return;
+            if (currentUser !== 'tv' || !cur || !cur.st) return;
             for (const id of CFG.stations) {
                 const nowS = !!(cur.st[id] && cur.st[id].s);
                 const prevS = !!(prev && prev.st && prev.st[id] && prev.st[id].s);
@@ -885,6 +1019,41 @@
                     options.forEach(opt => { opt.classList.remove('selected'); opt.setAttribute('aria-selected', 'false'); });
                     option.classList.add('selected'); option.setAttribute('aria-selected', 'true');
                     setSelectOpen(false); trigger.focus();
+                });
+            });
+
+            options.forEach((option, index) => {
+                option.addEventListener('keydown', e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        option.click();
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        options[Math.min(options.length - 1, index + 1)].focus();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        options[Math.max(0, index - 1)].focus();
+                    } else if (e.key === 'Escape' || e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        setSelectOpen(false);
+                        trigger.focus();
+                    }
+                });
+            });
+
+            const passwordInput = document.getElementById('password-input');
+            const loginButton = document.getElementById('login-button');
+            const loginControls = [trigger, passwordInput, loginButton];
+            loginControls.forEach((control, index) => {
+                control.addEventListener('keydown', e => {
+                    if (wrapper.classList.contains('open')) return;
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        loginControls[Math.min(loginControls.length - 1, index + 1)].focus();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        loginControls[Math.max(0, index - 1)].focus();
+                    }
                 });
             });
 
@@ -930,25 +1099,41 @@ function setTheme(theme) {
             clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
         }
 
-        function checkBreak() {
-            const d = new Date();
-            const currentMins = d.getHours() * 60 + d.getMinutes();
-            const currentSecsTotal = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+        function getWarsawClockParts(timestamp) {
+            const parts = new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'Europe/Warsaw',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hourCycle: 'h23'
+            }).formatToParts(new Date(timestamp));
+            const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+            return {
+                hour: Number(values.hour),
+                minute: Number(values.minute),
+                second: Number(values.second)
+            };
+        }
 
+        function checkBreak() {
+            // Harmonogram zawsze liczony według czasu serwera i strefy Europe/Warsaw,
+            // niezależnie od strefy ustawionej w telewizorze.
+            const clock = getWarsawClockParts(Date.now() + serverClockOffset);
+            const currentSeconds = clock.hour * 3600 + clock.minute * 60 + clock.second;
+            const at = (hour, minute) => (hour * 60 + minute) * 60;
             const schedule = [
-                { name: "ODPRAWA (ZMIANA 1)", start: 6*60, end: 6*60+5, icon: "groups" },
-                { name: "PRZERWA ŚNIADANIOWA", start: 8*60, end: 8*60+5, icon: "coffee" },
-                { name: "GŁÓWNA PRZERWA (Z1)", start: 10*60, end: 10*60+30, icon: "restaurant" },
-                { name: "PRZERWA (Z1)", start: 12*60+30, end: 12*60+35, icon: "coffee" },
-                { name: "ODPRAWA (ZMIANA 2)", start: 14*60+5, end: 14*60+10, icon: "groups" },
-                { name: "PRZERWA (Z2)", start: 16*60, end: 16*60+5, icon: "coffee" },
-                { name: "GŁÓWNA PRZERWA (Z2)", start: 18*60, end: 18*60+30, icon: "restaurant" },
-                { name: "PRZERWA (Z2)", start: 20*60+30, end: 20*60+35, icon: "coffee" }
+                { name: 'ODPRAWA (ZMIANA 1)', start: at(6, 0), end: at(6, 5), icon: 'groups' },
+                { name: 'PRZERWA (ZMIANA 1)', start: at(8, 0), end: at(8, 5), icon: 'coffee' },
+                { name: 'PRZERWA OBIADOWA (ZMIANA 1)', start: at(10, 0), end: at(10, 30), icon: 'restaurant' },
+                { name: 'PRZERWA (ZMIANA 1)', start: at(12, 30), end: at(12, 35), icon: 'coffee' },
+                { name: 'ODPRAWA (ZMIANA 2)', start: at(14, 0), end: at(14, 5), icon: 'groups' },
+                { name: 'PRZERWA (ZMIANA 2)', start: at(16, 0), end: at(16, 5), icon: 'coffee' },
+                { name: 'PRZERWA OBIADOWA (ZMIANA 2)', start: at(18, 0), end: at(18, 30), icon: 'restaurant' },
+                { name: 'PRZERWA (ZMIANA 2)', start: at(20, 30), end: at(20, 35), icon: 'coffee' }
             ];
-            for(let ev of schedule) {
-                if(currentMins >= ev.start && currentMins < ev.end) {
-                    const endSecsTotal = ev.end * 60;
-                    return { active: true, name: ev.name, icon: ev.icon, left: endSecsTotal - currentSecsTotal };
+            for (const event of schedule) {
+                if (currentSeconds >= event.start && currentSeconds < event.end) {
+                    return { active: true, name: event.name, icon: event.icon, left: event.end - currentSeconds };
                 }
             }
             return { active: false };
@@ -966,6 +1151,7 @@ function setTheme(theme) {
         const Auth = { login: () => {
             const station = document.getElementById('station-select').value;
             const password = document.getElementById('password-input').value;
+            if (station === 'tv') primeSupportSound(true);
             const err = document.getElementById('l-msg'); err.innerText = '';
             if (!socket.connected) { err.innerText = 'Brak połączenia z serwerem. Poczekaj na ponowne połączenie.'; return; }
             socket.emit('login', { station, password }, result => {
@@ -973,6 +1159,9 @@ function setTheme(theme) {
                 if (!result || !result.ok) { err.innerText = result && result.error ? result.error : 'Nie udało się zalogować.'; return; }
                 currentUser = result.user;
                 currentUserName = result.userName;
+                document.body.classList.toggle('role-tv', station === 'tv');
+                document.body.classList.toggle('role-admin', station === 'admin');
+                if (station === 'tv') primeSupportSound();
 
                 const dashboardSettingsButton = document.getElementById('btn-dashboard-settings');
                 if (dashboardSettingsButton) {
@@ -980,7 +1169,7 @@ function setTheme(theme) {
                     dashboardSettingsButton.title = station === 'admin' ? 'Ustawienia linii' : 'Opcje dashboardu';
                 }
 
-                if (station === 'tv' || station === 'admin') { primeSupportSound(); UI.switch('view-tv'); }
+                if (station === 'tv' || station === 'admin') { UI.switch('view-tv'); }
                 else { document.getElementById('op-title').innerText = station.toUpperCase(); document.getElementById('op-user-name').innerText = currentUserName; UI.switch('view-op'); }
             });
         } };
@@ -1075,7 +1264,7 @@ saveAdminSettings: () => {
                 const db = localDB; 
                 if (!db) return; 
 
-                const now = Date.now();
+                const now = Date.now() + serverClockOffset;
                 const bStat = checkBreak();
 
                 // Przerwy przełączamy tylko podczas aktywnej zmiany
@@ -1311,7 +1500,13 @@ saveAdminSettings: () => {
             return { makeXlsx, downloadCycles };
         })();
 
-        setInterval(() => { if(!document.getElementById('view-login').classList.contains('show') && document.getElementById('view-login').classList.contains('hidden')) Render.all(); }, 1000);
+        // Lokalny fallback. Główne odświeżanie zegara zapewnia impuls 'clock' z serwera.
+        (function scheduleRenderTick() {
+            setTimeout(() => {
+                if (localDB && currentUser) Render.all();
+                scheduleRenderTick();
+            }, 1000);
+        })();
     
         // NOWOŚĆ: Logika trybu pełnoekranowego (Fullscreen API)
         function toggleFullScreen() {
