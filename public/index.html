@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InPost Andon | System Produkcyjny</title>
+    
+    
+    <link rel="icon" type="image/png" href="logo.png">
+
+    
+
+    <link rel="stylesheet" href="/main.css">
+<link rel="stylesheet" href="/fonts/material-icons.css">
+<script src="/theme.js"></script>
+<script src="/socket.io/socket.io.js" defer></script>
+<script src="/auth-client.js" defer></script>
+<script src="/stations.js" defer></script>
+<script src="/support-sound.js" defer></script>
+<script src="/main.js" defer></script>
+</head>
+<body>
+
+    <img id="global-logo" src="logo.png" alt="InPost Logo">
+
+    <div id="connection-banner" class="connection-banner" role="status" aria-live="polite">Brak połączenia z serwerem - dane mogą być nieaktualne</div>
+    <div id="teams-toast" role="status" aria-live="polite">
+        <i class="material-icons" id="toast-icon">notifications_active</i>
+        <div><div class="tt-text" id="toast-title">Powiadomienie</div><div class="tt-sub" id="toast-message"></div></div>
+    </div>
+
+    <div id="view-login">
+        <div class="login-panel">
+            <img src="logo.png" alt="InPost Logo" class="login-logo">
+            <h1>Andon System</h1>
+            <p>Logowanie pracownika</p>
+            
+            <div class="input-group">
+                <label>Wybierz stanowisko</label>
+                <div class="custom-select-wrapper" id="custom-station-select">
+                    <div class="custom-select-trigger" role="combobox" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-controls="station-options">
+                        <div class="trigger-content">
+                            <i class="material-icons opt-icon">precision_manufacturing</i>
+                            <span>Stanowisko X0</span>
+                        </div>
+                        <i class="material-icons arrow">expand_more</i>
+                    </div>
+                    <div class="custom-options" id="station-options" role="listbox">
+                        <div class="custom-option selected" role="option" aria-selected="true" tabindex="-1" data-value="y0"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X0</span><span class="opt-sub">Linia X</span></div></div>
+                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y1"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X1</span><span class="opt-sub">Linia X</span></div></div>
+                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y2"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X2</span><span class="opt-sub">Linia X</span></div></div>
+                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y3"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X3</span><span class="opt-sub">Linia X</span></div></div>
+                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y4"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X4</span><span class="opt-sub">Linia X</span></div></div>
+                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="tv"><i class="material-icons opt-icon inline-0">tv</i><div class="opt-text"><span class="opt-title">Główny Dashboard</span><span class="opt-sub">Ekran Informacyjny (TV)</span></div></div>
+                    </div>
+                </div>
+                <input type="hidden" id="station-select" value="y0">
+            </div>
+
+            <div class="input-group inline-1">
+                <label for="password-input">Numer pracownika — kod dostępu</label>
+                <input type="password" id="password-input" class="inp-login" placeholder="Wpisz swój numer pracownika" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autofocus autocomplete="off">
+            </div>
+            
+            <button class="btn-action primary inline-2" data-event-click="0" data-auth-login>
+                ZALOGUJ SIĘ
+            </button>
+            <a class="panel-link hidden inline-3" href="/panelsterowania">Panel sterowania →</a>
+            <div id="l-msg" class="inline-4"></div>
+        </div>
+    </div>
+
+    <div id="view-tv" class="hidden">
+        <div id="tv-break-overlay" class="hidden">
+            <i class="material-icons" id="overlay-icon">coffee</i>
+            <h1 id="overlay-title">PRZERWA</h1>
+            <p>Czas taktu na stanowiskach został wstrzymany.</p>
+            <div id="break-timer">05:00</div>
+        </div>
+
+        <div class="tv-main">
+
+            <div class="tv-top-bar">
+      <div class="title-main">
+                    DASHBOARD
+                    <div class="inline-5">
+                        <button class="btn-settings" data-event-click="1" title="Pełny Ekran"><i class="material-icons" id="fs-icon">fullscreen</i></button>
+                        <button type="button" class="btn-settings" id="dashboard-options" title="Opcje" aria-label="Opcje" aria-haspopup="dialog" aria-controls="modal-op-settings"><i class="material-icons" aria-hidden="true">settings</i></button>
+                        <button class="btn-settings" data-event-click="2" title="Wyloguj"><i class="material-icons">logout</i></button>
+                        <button class="btn-settings" data-event-click="3" title="Dziennik Zdarzeń"><i class="material-icons">history</i></button>
+                    </div>
+                </div>
+                <div class="kpi-wrapper">
+                    <div class="kpi-unit"><div class="kpi-lbl">Status Linii</div><div class="kpi-val inline-6" id="tv-status">PRACA</div></div>
+                    <div class="kpi-unit"><div class="kpi-lbl">Czas Taktu</div><div class="kpi-val yellow" id="tv-takt">28:00</div></div>
+                    <div class="kpi-unit"><div class="kpi-lbl" id="tv-goal-lbl">Realizacja (Cel: 15)</div><div class="kpi-val" id="tv-count">0/15</div></div>
+                    <div class="kpi-unit"><div class="kpi-lbl">Zegar systemowy</div><div class="kpi-val inline-7" id="sys-clock">12:00</div></div>
+                </div>
+            </div>
+            <div class="tv-grid" id="tv-grid"></div>
+        </div>
+
+<div id="tv-sidebar">
+            <div class="log-header inline-8">
+                <div class="inline-9">
+                    <span>Dziennik Zdarzeń</span>
+                    <i class="material-icons inline-10" data-event-click="4" title="Zamknij panel">close</i>
+                </div>
+                <div class="inline-11">
+                    <button class="btn-tab active" data-event-click="5">Ogólne</button>
+                    <button class="btn-tab" data-event-click="6">Czasy Wykonania</button>
+                </div>
+            </div>
+            <div class="log-feed" id="tv-logs"></div>
+            <div class="log-feed hidden" id="tv-cycle-logs"></div>
+        </div>
+    </div><!-- /#view-tv -->
+
+    <div id="view-op" class="hidden">
+        <div class="op-header">
+            <div><div class="op-title" id="op-title">X0</div></div>
+            <div class="op-info">
+                <div class="inline-12">
+                    <span class="op-user-name" id="op-user-name">Jan Kowalski</span>
+                    <i class="material-icons inline-13" data-event-click="7" title="Ustawienia Operatora" data-event-mouseover="8" data-event-mouseout="9">settings</i>
+                </div>
+                <div class="op-logout" data-event-click="10"><i class="material-icons inline-14">logout</i> Wyloguj i zmień konto</div>
+            </div>
+        </div>
+
+        <div class="op-body">
+            <div class="met-grid">
+                <div class="met-tile inline-15"><div class="met-lbl">Czas Taktu</div><div class="met-val" id="op-takt">28:00</div></div>
+                <div class="met-tile inline-16"><div class="met-lbl">Czas Przestoju</div><div class="met-val inline-17" id="op-down">00:00</div></div>
+                <div class="met-tile inline-18"><div class="met-lbl" id="op-goal-lbl">Wykonano (Cel: 15)</div><div class="met-val" id="op-count">0/15</div></div>
+            </div>
+
+            <div class="act-grid">
+                <button class="btn-ind btn-big-ok" id="btn-ok" data-event-click="11">POTWIERDŹ OK<div class="btn-sub">Zakończ cykl jako prawidłowy</div></button>
+                <button class="btn-ind btn-help" id="btn-help" data-event-click="12"><i class="material-icons">support_agent</i> Wezwij Wsparcie</button>
+                <button class="btn-ind btn-doc" data-event-click="13"><i class="material-icons">description</i> Instrukcja SWI</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-op-settings" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="options-title" inert>
+        <div class="modal-box">
+            <div class="modal-head inline-19" id="options-title">Opcje</div>
+            <p class="inline-20">Dostosuj aplikację do swoich preferencji.</p>
+            <div class="input-group">
+                <label>Motyw aplikacji</label>
+                <div class="inline-21">
+                    <button class="btn-action inline-22" data-event-click="14"><i class="material-icons inline-23">dark_mode</i> Ciemny</button>
+                    <button class="btn-action inline-24" data-event-click="15"><i class="material-icons inline-25">light_mode</i> Jasny</button>
+                </div>
+            </div>
+            <section id="dashboard-sound-options" class="options-sound" hidden>
+                <h3>Dźwięk wezwań wsparcia</h3>
+                <div class="sound-volume"><label for="support-volume">Głośność</label><output for="support-volume" data-sound-volume-value>100%</output><input id="support-volume" data-sound-volume type="range" min="0" max="100" step="5" value="100"></div>
+                <div class="sound-controls"><button type="button" data-sound-test>Włącz i sprawdź dźwięk</button><button type="button" data-sound-mute disabled>Wycisz</button><span data-sound-status role="status"></span></div>
+            </section>
+            <button class="btn-action primary" data-event-click="16">Zamknij</button>
+        </div>
+    </div>
+
+    <div id="modal-support" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-head">Potrzebuję wsparcia z powodu:</div>
+            <div class="reason-grid">
+                <button class="btn-reason" data-event-click="17"><i class="material-icons inline-26">inventory_2</i> Brak Materiału</button>
+                <button class="btn-reason" data-event-click="18"><i class="material-icons inline-27">build</i> Awaria Maszyny</button>
+                <button class="btn-reason" data-event-click="19"><i class="material-icons inline-28">report</i> Wada materiału</button>
+                <button class="btn-reason" data-event-click="20"><i class="material-icons inline-29">contact_support</i> Inne / Potrzebny Brygadzista</button>
+            </div>
+            <div id="support-comment-container" class="hidden inline-30">
+                <label class="inline-31">Opisz, jakiego materiału brakuje:</label>
+                <textarea id="support-comment" class="inp-textarea" placeholder="Wpisz komentarz (np. jakiej części brakuje)..."></textarea>
+                <button id="btn-send-material-support" class="btn-action primary" data-event-click="21">Wyślij Zgłoszenie o Braku Materiału</button>
+            </div>
+            <button class="btn-action inline-32" data-event-click="22">Zamknij</button>
+        </div>
+    </div>
+
+    <div id="modal-doc" class="modal-overlay">
+        <div class="modal-box inline-33">
+            <div class="modal-head">Instrukcja SWI</div>
+            <div class="inline-34">
+                <div class="inline-35"><strong class="inline-36">KROK 1: WERYFIKACJA WIZUALNA</strong> Sprawdź komponenty z dokumentacją BOM.</div>
+                <div><strong class="inline-37">KROK 2: MONTAŻ WŁAŚCIWY</strong> Zamontuj element zgodnie ze schematem.</div>
+            </div>
+            <button class="btn-action primary" data-event-click="23">Zrozumiałem</button>
+        </div>
+    </div>
+
+    <!-- NOWOŚĆ: uniwersalne, ostylowane okno dialogowe (zastępuje natywne confirm/alert) -->
+    <div id="modal-dialog" class="modal-overlay inline-38" data-event-click="24">
+        <div class="modal-box inline-39">
+            <div class="modal-head" id="dialog-title">Potwierdzenie</div>
+            <p id="dialog-msg" class="inline-40"></p>
+            <div class="inline-41">
+                <button class="btn-action primary inline-42" id="dialog-ok" data-event-click="25">Potwierdź</button>
+                <button class="btn-action inline-43" id="dialog-cancel" data-event-click="26">Anuluj</button>
+            </div>
+        </div>
+    </div>
+
+    
+</body>
+</html>

@@ -1,0 +1,16 @@
+
+        * { box-sizing: border-box; }
+        body { margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center;
+               background: #0A0A0B; color: #F5F5F3; font-family: "Segoe UI", Arial, sans-serif; }
+        .box { width: 440px; max-width: 90vw; padding: 2rem; text-align: center; }
+        h1 { color: #FFCC00; font-size: 1.7rem; margin: 0 0 .5rem; letter-spacing: -0.5px; }
+        p { color: #9A9C9F; font-size: .9rem; margin: 0 0 1.75rem; }
+        input { width: 100%; padding: 1rem; background: #151517; border: 1px solid #303133; color: #fff;
+                border-radius: 8px; font-size: 1.05rem; }
+        input:focus { outline: none; border-color: #FFCC00; box-shadow: 0 0 0 3px rgba(255,204,0,0.18); }
+        button { width: 100%; margin-top: 1rem; padding: 1rem; background: #FFCC00; color: #131313; border: none;
+                 border-radius: 8px; font-weight: 800; font-size: 1.05rem; cursor: pointer; }
+        button:hover { background: #E6B800; }
+        .err { color: #E5484D; font-size: .85rem; margin-top: 1rem; min-height: 1.1em; font-weight: 600; }
+        .hint { color: #6E6E70; font-size: .75rem; margin-top: 1.25rem; }
+    

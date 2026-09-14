@@ -1,0 +1,48 @@
+# Zależności Node.js
+node_modules/
+client/node_modules/
+
+# Sekrety i konfiguracja lokalna
+.env
+.env.*
+!.env.example
+
+# Stan aplikacji
+andon_state.json
+andon_state.json.tmp
+
+# Gotowe pliki i katalogi kompilacji
+dist/
+client/dist/
+build/
+*.exe
+*.7z
+
+# Logi
+*.log
+debug.log
+npm-debug.log*
+
+# Pliki systemowe i edytorów
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# Konta pracowników i audyt dostępu
+data/
+
+# Szyfrowanie i kopie danych
+.andon-keys/
+*.key
+*.pem
+*.pfx
+*.enc
+*.lock
+*.tmp
+!package-lock.json
+!client/package-lock.json
+
+# Baza historii i jej dzienniki
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

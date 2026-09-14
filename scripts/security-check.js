@@ -1,0 +1,4 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path');const root=path.resolve(__dirname,'..');let count=0,failed=false;
+function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const file=path.join(dir,e.name);if(e.isDirectory())walk(file);else if(/\.(js|html|css|json|map)$/.test(e.name)){count++;const text=fs.readFileSync(file,'utf8');if(/https:\/\/[^\s"']*\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|\b(?:sk-proj-|sk-live-)[A-Za-z0-9_-]{20,}/.test(text)){console.error('Potencjalny sekret w publicznym pliku: '+path.relative(root,file));failed=true;}if(e.name.endsWith('.html')&&(/\son\w+\s*=|<script(?![^>]*\bsrc=)[^>]*>\s*[^<\s]/i.test(text))){console.error('Skrypt inline w '+path.relative(root,file));failed=true;}}}}
+walk(path.join(root,'public'));console.log('Sprawdzono publiczne pliki: '+count);process.exitCode=failed?1:0;

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Andon — konfiguracja</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'"><link rel="stylesheet" href="settings.css">
+</head>
+<body>
+    <div class="box">
+        <h1>Andon — połączenie</h1>
+        <p>Podaj adres serwera Andon w sieci lokalnej.</p>
+        <input id="url" placeholder="https://andon.inpost.pl lub http://localhost:3000" autofocus>
+        <button id="go">Połącz</button>
+        <div class="err" id="err"></div>
+        <div class="hint">Adres zostanie zapamiętany. Zmiana później: menu „Andon → Zmień adres serwera" (Ctrl+,).</div>
+    </div>
+    <script src="settings.js"></script>
+</body>
+</html>
