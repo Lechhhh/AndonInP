@@ -30,3 +30,18 @@ Pliki klienta Electron w ZIP są identyczne z wersją sprzed zabezpieczeń. Zach
 - security:check: publiczne pliki bez wykrytych wzorców sekretów i skryptów inline. Zależności bez zmian.
 
 Aby uruchomić nowy kod, zatrzymaj poprzedni serwer Ctrl+C, wykonaj npm start i odśwież stronę Ctrl+F5. Następnie wykonaj test dźwięku na każdym urządzeniu, które ma sygnalizować wezwania.
+
+## Druga paczka — 14.09.2026
+
+Porównano `AndonInP-main (2).zip` z pierwszą paczką i bieżącą aplikacją. Dokumenty z archiwum potraktowano jako materiał porównawczy, a zakres zmian oparto na prośbach użytkownika.
+
+- Przeniesiono i dopasowano układ dashboardu do ekranów Full HD i 4K, zachowując widok mobilny.
+- Dodano obsługę wyboru stanowiska klawiaturą: strzałki, Home/End, Enter/Spacja i Escape. Poprawiono widoczność fokusu oraz poruszanie się między kontrolkami logowania.
+- Dodano awaryjny sygnał trzech tonów przy niedostępności MP3. Działa po włączeniu dźwięku przez użytkownika, respektuje głośność i wyciszenie. Ręczny test ponawia próbę odtworzenia MP3. Plik audio nie zmienił się między paczkami; zachowano dotychczasową przygotowaną kopię.
+- Zgodnie z decyzją użytkownika przesunięto odprawę drugiej zmiany na 14:00–14:05. Synchronizacja zegara i strefa czasowa były już obsługiwane przez aktualny serwer.
+
+Zrealizowano też bieżące zgłoszenia: przycisk OK jest szary podczas zapisu, po potwierdzeniu stanowiska i przez 1,5 sekundy po zmianie cyklu. Bez licznika czasu. Osiągnięcie planu automatycznie kończy zmianę, a serwer blokuje dalsze potwierdzenia, aby zapobiec wynikom takim jak 9/8. Interfejs pokazuje „CEL OSIĄGNIĘTY”. Historyczne wyniki pozostają zachowane.
+
+Aktualizacja wcześniejszego opisu połączenia: chwilowe rozłączenie nie zamyka sesji widoku; aplikacja ponawia połączenie i zachowuje formularze. Wygaśnięcie lub odwołanie sesji nadal wymaga logowania. Zachowano obecne zabezpieczenia, historię i klienta Electron.
+
+Weryfikacja: 67/67 testów, kontrola publicznych plików i składni poprawne. Oceniono interfejs w przeglądarce przy szerokościach 375, 1920 i 3840 px oraz nawigację klawiaturą. Awaryjny dźwięk sprawdzono automatycznie, bez odsłuchu na docelowych głośnikach. Szczegóły w `TEST_REPORT.md`. Zmiany wymagają ponownego uruchomienia serwera i odświeżenia strony.

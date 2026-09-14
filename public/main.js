@@ -193,7 +193,7 @@ function setTheme(theme) {
         const Logic = {
             actionOK: () => {
                 if (!requireConnection()) return;
-                if (pendingOK || performance.now() < okAvailableAt || !localDB.shiftActive || localDB.isBreak || localDB.st[currentUser]?.r) return;
+                if (pendingOK || performance.now() < okAvailableAt || localDB.count >= localDB.goal || !localDB.shiftActive || localDB.isBreak || localDB.st[currentUser]?.r) return;
                 const operation = {cycleId:localDB.cycleId,requestId:AndonAuth.requestId()};
                 pendingOK = operation;
                 const btn = document.getElementById('btn-ok');
@@ -271,7 +271,8 @@ function setTheme(theme) {
                 }
 
                 const st = document.getElementById('tv-status');
-                if(!db.shiftActive) { st.innerText = db.shiftStart ? "ZATRZYMANA" : "OCZEKIWANIE"; st.style.color = "var(--col-muted)"; }
+                if(db.count>=db.goal) { st.innerText = 'CEL OSIĄGNIĘTY'; st.style.color = 'var(--status-ok)'; }
+                else if(!db.shiftActive) { st.innerText = db.shiftStart ? "ZATRZYMANA" : "OCZEKIWANIE"; st.style.color = "var(--col-muted)"; }
                 else if(db.isDown) { st.innerText = "PRZESTÓJ"; st.style.color = "var(--status-nok)"; }
                 else { st.innerText = "PRACA"; st.style.color = "var(--status-ok)"; }
 
@@ -306,7 +307,9 @@ function setTheme(theme) {
                 const s = db.st[currentUser]; if(!s)return;
                 const bOk = document.getElementById('btn-ok'); const bSup = document.getElementById('btn-help');bSup.disabled=s.s&&!s.canCancel;
                 
-                if(!db.shiftActive) {
+                if(db.count>=db.goal) {
+                    bOk.innerHTML = `CEL OSIĄGNIĘTY<div class='btn-sub'>Plan wykonany. Poczekaj na nową zmianę.</div>`; bOk.disabled = true;
+                } else if(!db.shiftActive) {
                     bOk.innerHTML = `ZMIANA ZATRZYMANA<div class='btn-sub'>Poczekaj na rozpoczęcie zmiany</div>`; bOk.disabled = true;
                 } else if(db.isBreak) {
                     bOk.innerHTML = `PRZERWA<div class='btn-sub'>Odpocznij, czas jest zatrzymany</div>`; bOk.disabled = true;

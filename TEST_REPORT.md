@@ -59,3 +59,13 @@
 - Zamknięcie okien i wyczyszczenie danych z poprzedniej poprawki dotyczy zakończenia lub odwołania sesji. Chwilowa utrata transportu nie kończy sesji. Faktyczne wygaśnięcie sesji lub odebranie dostępu nadal wymaga logowania.
 - Dodano cztery scenariusze DOM oraz dwa testy łączące rzeczywiste skrypty interfejsu z izolowanym serwerem HTTP i Socket.IO. Sprawdzono zmianę widoczności karty, zerwanie transportu, odzyskanie danych bez kolejnego logowania, zachowanie formularza oraz odmowę ponownego połączenia po wygaśnięciu lub odwołaniu sesji.
 - Wynik: `npm test` — 59/59; `security:check` i kontrola składni zmienionych skryptów — poprawne. Nie odtwarzano usypiania karty w konkretnej przeglądarce użytkownika; testy widoczności wykonano w JSDOM, a transportu na rzeczywistym połączeniu WebSocket.
+
+## Potwierdzanie OK, limit planu i druga paczka kolegi — 14.09.2026
+
+- `npm test`: 67/67 testów poprawnych. `npm run security:check`: 15 publicznych plików sprawdzonych, bez wykrytych wzorców sekretów i skryptów inline. Kontrola składni `lib/line.js`, `public/main.js`, `public/control-panel.js` i `public/support-sound.js` poprawna.
+- OK pozostaje szare i nieaktywne podczas zapisu, po potwierdzeniu stanowiska oraz przez 1,5 sekundy po przejściu do kolejnego cyklu. Nie dodano licznika. Testy obejmują wielokrotne kliknięcie, synchronizację podczas zapisu, granicę czasu blokady i błąd odpowiedzi.
+- Serwer kończy zmianę po osiągnięciu planu i odrzuca dalsze potwierdzenia. Sprawdzono 8/8, trwałość po restarcie, ponowienie żądania, nową zmianę, pojedynczy zapis zakończenia i brak podwójnego naliczania przestoju. Awaria zapisu ostatniego potwierdzenia nie pozostawia częściowej zmiany danych. Test rzeczywistego Socket.IO sprawdza równoległe potwierdzenia pięciu stanowisk i odrzucenie kolejnego kompletu.
+- Sprawdzono granice odprawy drugiej zmiany: 14:00–14:05.
+- Przeglądarka na izolowanych danych: wybór stanowiska klawiaturą, szary przycisk oczekiwania, dashboard przy 375×812, 1920×1080 i 3840×2160. Brak poziomego przepełnienia i błędów w sprawdzonej konsoli. Poprawiono opóźnienie widoczności listy, które uniemożliwiało natychmiastowe ustawienie fokusu klawiaturą.
+- Awaryjny sygnał przy błędzie MP3 sprawdzono z atrapą AudioContext: tony, głośność, brak powtarzania po synchronizacji, wyciszenie i ponowna próba MP3. Nie wykonano odsłuchu na fizycznych głośnikach ani próby pilota na telewizorze.
+- Nie zmieniano historycznych wyników przekraczających plan ani produkcyjnych danych. Nie restartowano produkcyjnego serwera. Zależności bez zmian i bez nowego audytu zależności. Szczegóły integracji w `SCALENIE_KOLEGI.md`.

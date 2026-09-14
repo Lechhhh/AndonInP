@@ -26,6 +26,36 @@ test('Nakładka: trwałe ustawienie, walidacja i historia bez zmiany naliczania 
 });
 test('Oznaczenia X zachowują identyfikatory kont i archiwum',()=>{for(let i=0;i<5;i++)assert.equal(label('y'+i),'X'+i);assert.equal(label('Y2'),'X2');assert.equal(validate('view','y2'),'y2');assert.throws(()=>validate('view','x2'));});
 
+test('Plan 8 sztuk: zatrzymanie przy 8/8, trwałość i brak podwójnego przestoju', t => {
+ const f=fixture(t);f.setNow(Date.parse('2026-09-14T07:00:00+02:00'));
+ f.line.change('adminSettings',{goal:8,time:8,...request()},user,'panel');f.line.change('shiftStart',request(),user,'panel');
+ let last;
+ for(let cycle=0;cycle<8;cycle++){
+  f.setNow(f.line.state.cycleStart+65000);const cycleId=f.line.state.cycleId;
+  for(const station of ['y0','y1','y2','y3','y4']){last={cycleId,...request()};f.line.change('actionOK',last,user,station);}
+ }
+ assert.equal(f.line.state.count,8);assert.equal(f.line.state.shiftActive,false);assert.equal(f.line.state.accDown,40);
+ const stop=f.line.state.shiftStopTime;
+ assert.equal(f.line.change('actionOK',last,user,'y4').ok,true);
+ assert.throws(()=>f.line.change('actionOK',{cycleId:f.line.state.cycleId,...request()},user,'y0'),error=>error.code==='GOAL_REACHED');
+ f.setNow(stop+3600000);const restored=f.restart();assert.equal(restored.state.count,8);assert.equal(restored.state.shiftStopTime,stop);assert.equal(restored.timing().downSec,40);
+ const rows=f.history.query(validate('historyQuery',{period:'day',date:'2026-09-14',limit:100})).rows;
+ assert.equal(rows.filter(row=>row.type==='cycle').length,8);assert.equal(rows.filter(row=>row.type==='shiftStop').length,1);
+ assert.equal(rows.filter(row=>row.type==='cycle'||row.type==='shiftStop').reduce((sum,row)=>sum+(row.downSeconds||0),0),40);
+ restored.change('shiftStart',request(),user,'panel');assert.equal(restored.state.count,0);assert.equal(restored.state.shiftActive,true);
+});
+
+test('Osiągnięcie planu: błąd zapisu nie zatwierdza ostatniej sztuki ani zatrzymania', t => {
+ const f=fixture(t);f.setNow(Date.parse('2026-09-14T07:00:00+02:00'));
+ f.line.change('adminSettings',{goal:1,time:60,...request()},user,'panel');f.line.change('shiftStart',request(),user,'panel');
+ const cycleId=f.line.state.cycleId;
+ for(const station of ['y0','y1','y2','y3'])f.line.change('actionOK',{cycleId,...request()},user,station);
+ const commit=f.history.commit;f.history.commit=()=>{throw new Error('disk');};
+ assert.throws(()=>f.line.change('actionOK',{cycleId,...request()},user,'y4'),/disk/);
+ assert.equal(f.line.state.count,0);assert.equal(f.line.state.shiftActive,true);assert.equal(f.line.state.st.y4.r,false);
+ f.history.commit=commit;f.line.change('actionOK',{cycleId,...request()},user,'y4');assert.equal(f.line.state.count,1);assert.equal(f.line.state.shiftActive,false);
+});
+
 test('Odprawa drugiej zmiany: blokada 14:00–14:05 i wznowienie o 14:05', t => {
  const f=fixture(t),at=time=>Date.parse('2026-09-14T'+time+':00+02:00');
  f.setNow(at('13:59'));f.line.change('shiftStart',request(),user,'panel');

@@ -103,7 +103,7 @@ function duration(seconds) { return [Math.floor(seconds / 3600), Math.floor(seco
 function node(tag, text, className) { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if (className) el.className = className; return el; }
 function renderProduction() {
     if (!state) return;
-    $('shift-status').textContent = state.shiftActive ? (state.isBreak ? 'PRZERWA' : state.isDown ? 'PRZESTÓJ' : 'AKTYWNA') : 'ZATRZYMANA';
+    $('shift-status').textContent = state.count >= state.goal ? 'CEL OSIĄGNIĘTY' : state.shiftActive ? (state.isBreak ? 'PRZERWA' : state.isDown ? 'PRZESTÓJ' : 'AKTYWNA') : 'ZATRZYMANA';
     $('production-count').textContent = state.count + ' / ' + state.goal;
     $('production-takt').textContent = Number(state.taktMins.toFixed(2)) + ' min';
     const end = state.shiftActive ? state.serverTime : state.shiftStopTime;

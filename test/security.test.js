@@ -41,3 +41,14 @@ test('Produkcja: HTTPS przez zaufane proxy, Secure cookie i lista adresów klien
  assert.equal((await fetch(url+'/api/session',{headers:{...headers,'X-Forwarded-Proto':'http'}})).status,426);
 });
 test('Limity kont działają niezależnie od adresu IP',()=>{const limit=new Limiter();limit.take('ip:a',15,300000);limit.take('code:hash',1,300000);limit.take('ip:b',15,300000);assert.throws(()=>limit.take('code:hash',1,300000),e=>e.status===429);});
+
+test('Socket.IO: równoczesne OK z pięciu stanowisk nie przekraczają planu',async t=>{
+ const f=await setup();t.after(()=>f.app.close());const c=client(f);await c.login(f.app.accounts.state.users[0].number);
+ const user=f.app.accounts.state.users[0];f.app.line.clock=()=>Date.parse('2026-09-14T07:00:00+02:00');
+ f.app.line.change('adminSettings',{goal:1,time:60,...req()},user,'panel');f.app.line.change('shiftStart',req(),user,'panel');
+ const clients=await Promise.all(STATIONS.map(station=>c.socket(station)));t.after(()=>clients.forEach(({socket})=>socket.disconnect()));
+ const cycleId=f.app.line.state.cycleId;
+ const first=await Promise.all(clients.map(({socket})=>emit(socket,'actionOK',{cycleId,...req()})));assert(first.every(result=>result.ok));
+ const next=await Promise.all(clients.map(({socket})=>emit(socket,'actionOK',{cycleId:f.app.line.state.cycleId,...req()})));
+ assert(next.every(result=>result.code==='GOAL_REACHED'));assert.equal(f.app.line.state.count,1);assert.equal(f.app.line.state.shiftActive,false);
+});

@@ -120,6 +120,12 @@ test('Logowanie: pilot i klawiatura wybierają stanowisko i przenoszą fokus', a
     assert.deepEqual(f.errors, []);
 });
 
+test('OK: wykonany plan pozostawia przycisk nieaktywny', async t => {
+ const f=dashboard(t);await f.login();const button=f.w.document.getElementById('btn-ok');let sent=0;f.socket.on('actionOK',()=>sent++);
+ f.socket.emit('sync',{shiftActive:false,goal:8,count:8,cycleId:'finished',st:{y0:{r:false,s:false}}});
+ assert.equal(button.disabled,true);assert.match(button.textContent,/CEL OSIĄGNIĘTY/);button.click();assert.equal(sent,0);
+});
+
 for (const event of ['disconnect', 'sessionRevoked']) {
     test('Dashboard: ' + event + ' zamyka okna i czyści komentarz wezwania', async t => {
         const f = dashboard(t), doc = f.w.document;
