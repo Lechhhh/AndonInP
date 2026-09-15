@@ -624,3 +624,14 @@ img,svg,canvas,video{max-width:100%}
 
 /* Logowanie według działu */
 #connection-banner.hidden{display:none!important}.login-panel-wide{max-width:560px}.department-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 24px}.department-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:88px;padding:12px;border:1px solid var(--border-color);border-radius:12px;background:var(--col-surface);color:var(--col-muted);font:inherit;font-weight:700;cursor:pointer;transition:border-color .18s ease,background-color .18s ease,color .18s ease,transform .18s ease}.department-card i{font-size:25px}.department-card:hover{transform:translateY(-1px);color:var(--col-text)}.department-card.active{border-color:var(--col-yellow);background:rgba(255,204,0,.09);color:var(--col-yellow)}.second-operator-toggle{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;margin:-8px 0 18px;border:1px dashed var(--border-color);border-radius:10px;background:transparent;color:var(--col-muted);font:inherit;font-weight:650;cursor:pointer}.second-operator-toggle:hover{border-color:var(--col-yellow);color:var(--col-yellow)}.second-operator-row{display:grid;grid-template-columns:1fr 46px;gap:8px}.second-operator-row button{border:1px solid #8f4048;border-radius:10px;background:#441f25;color:#ffd2d7;font-size:24px;cursor:pointer}@media(max-width:600px){.login-panel-wide{max-width:100%}.department-picker{grid-template-columns:1fr}.department-card{min-height:54px;flex-direction:row}.login-panel p{margin-bottom:1.3rem}}
+
+
+/* Dedykowany dashboard Montażu: wszystkie stanowiska na jednym ekranie */
+body.role-tv{overflow:hidden!important}
+body.role-tv #view-tv{height:100dvh;min-height:0;overflow:hidden!important}
+body.role-tv .tv-grid.assembly-dashboard{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:clamp(10px,1vw,20px);height:clamp(300px,48vh,560px);min-height:0;overflow:hidden}
+body.role-tv .tv-grid.assembly-dashboard .tv-card{min-width:0;min-height:0;height:100%;padding:clamp(10px,1.2vw,22px)}
+body.role-tv .tv-grid.assembly-dashboard .tv-card-head{font-size:clamp(2rem,3vw,5rem)}
+body.role-tv .tv-grid.assembly-dashboard .tv-card-sub{font-size:clamp(.7rem,.85vw,1.25rem);margin-top:clamp(6px,.7vw,14px)}
+@media(max-aspect-ratio:16/10){body.role-tv .tv-grid.assembly-dashboard{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));height:54vh}}
+@media(min-width:2500px){body.role-tv .tv-grid.assembly-dashboard{height:52vh;gap:clamp(18px,1vw,34px)}}

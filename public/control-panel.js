@@ -250,7 +250,7 @@ $('person-form').addEventListener('submit', async event => {
     finally { button.disabled = false; }
 });
 
-for(const [id,max] of [['plan-hour',24],['plan-minute',60]])for(let n=0;n<max;n++){const option=document.createElement('option');option.value=String(n).padStart(2,'0');option.textContent=option.value;$(id).append(option);}
+for(const [id,max] of [['plan-hour',24],['plan-minute',60]]){const select=$(id);select.replaceChildren();for(let n=0;n<max;n++){const option=document.createElement('option');option.value=String(n).padStart(2,'0');option.textContent=option.value;select.append(option);}select.value='00';}
 HistoryPanel.init(request,()=>identity,message);
 
 $('toggle-break-overlay').addEventListener('click',event=>perform(event.currentTarget,async()=>{if(!state)return;await request('setBreakOverlayDisabled',{disabled:!state.breakOverlayDisabled});message('Zapisano ustawienie nakładki przerwy.');}));
@@ -346,7 +346,15 @@ document.addEventListener('click', event => {
     });
 });
 
-if (typeof AndonAuth.session === 'function') AndonAuth.session().then(result=>openWorkspace(result)).catch(()=>{});
+async function finishPanelBoot(){
+    try{
+        if(typeof AndonAuth.session==='function'){
+            const result=await AndonAuth.session();
+            await openWorkspace(result);
+        }
+    }catch{}finally{document.documentElement.classList.remove('panel-booting');}
+}
+finishPanelBoot();
 
 const backToMain=$('back-to-main');if(backToMain)backToMain.addEventListener('click',async event=>{event.preventDefault();try{await AndonAuth.logout();}catch{}socket.disconnect();location.replace('/');});
 window.addEventListener('pageshow',()=>{if(location.pathname!=='/'&&history.state&&history.state.returnHome)location.replace('/');});

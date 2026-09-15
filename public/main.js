@@ -309,10 +309,17 @@ function setTheme(theme) {
                 else if(db.isDown) { st.innerText = "PRZESTÓJ"; st.style.color = "var(--status-nok)"; }
                 else { st.innerText = "PRACA"; st.style.color = "var(--status-ok)"; }
 
-                const g = document.getElementById('tv-grid'); 
-                if(g.children.length === 0) g.innerHTML = CFG.stations.map(id => `<div class="tv-card" id="card-${id}"><div class="tv-card-head">${AndonStations.label(id)}</div><div class="tv-card-sub" id="sub-${id}">W TOKU</div></div>`).join('');
-                
-                CFG.stations.forEach(id => {
+                const g=document.getElementById('tv-grid');
+                const dashboardStations=Object.keys(db.st||{});
+                const dashboardSignature=dashboardStations.join('|');
+                if(g.dataset.stations!==dashboardSignature){
+                    g.dataset.stations=dashboardSignature;
+                    g.innerHTML=dashboardStations.map(id=>`<div class="tv-card" id="card-${id}"><div class="tv-card-head">${AndonStations.label(id)}</div><div class="tv-card-sub" id="sub-${id}">W TOKU</div></div>`).join('');
+                    g.classList.toggle('assembly-dashboard',dashboardStations.some(id=>AndonStations.department(id)==='assembly'));
+                    const heading=document.querySelector('#view-tv .title-main');
+                    if(heading)heading.childNodes[0].textContent=dashboardStations.some(id=>AndonStations.department(id)==='assembly')?'DASHBOARD MONTAŻU ':'DASHBOARD ELEKTROMONTAŻU ';
+                }
+                dashboardStations.forEach(id => {
                     const s = db.st[id]; if(!s)return; const card = document.getElementById(`card-${id}`); const sub = document.getElementById(`sub-${id}`);
                     card.className = 'tv-card'; 
                     if(s.s) { card.classList.add('st-warn'); sub.innerText = s.reason || 'WSPARCIE'; } 
