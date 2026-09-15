@@ -24,7 +24,7 @@ W Render otwórz usługę → Environment → Add Environment Variable. Po uzupe
 | `ANDON_HOST` | `0.0.0.0` |
 | `ANDON_ALLOWED_ORIGINS` | `https://andoninpost.onrender.com` — bez końcowego `/` |
 | `ANDON_ALLOWED_CLIENTS` | Publiczne IP dozwolonych sieci domowych, firmowych lub VPN. Dla pojedynczego IPv4: `ADRES_IP/32`; dla IPv6: `ADRES_IPV6/128`. Wiele wpisów oddziel przecinkami. |
-| `ANDON_TRUST_PROXY` | Potwierdzone adresy lub zakresy proxy, które faktycznie przekazują żądania do tej usługi. Szczegóły poniżej. |
+| `ANDON_TRUST_PROXY` | `render` dla publicznego testu na Render z aktualnym kodem. Przy ograniczeniu IP: potwierdzone adresy lub zakresy proxy. Szczegóły poniżej. |
 | `ANDON_MASTER_KEY` | Stały, tajny klucz: dokładnie 32 losowe bajty zakodowane jako base64. Dla przenoszonych danych użyj dotychczasowego klucza. |
 | `ANDON_DATA_DIR` | `/var/data/andon/data` — przy dysku zamontowanym w `/var/data` |
 | `ANDON_STATE_FILE` | `/var/data/andon/andon_state.json` |
@@ -38,15 +38,45 @@ Na prośbę użytkownika dodano opcjonalne `ANDON_PUBLIC_TEST_MODE=true`. Po wgr
 
 Tryb publicznego testu dopuszcza dowolne IP do ekranu logowania. Logowanie numerem pracownika, role, limity żądań, kontrola originu, HTTPS i klucz szyfrowania nadal obowiązują. Używaj danych testowych: osoba znająca kod pracownika nadal może się nim zalogować. Przy starcie serwer drukuje komunikat `PUBLICZNY TEST`.
 
-Pozostaw `NODE_ENV=production`, `ANDON_HOST=0.0.0.0` i `ANDON_ALLOWED_ORIGINS=https://andoninpost.onrender.com`. Uzupełnij również proxy i klucz zgodnie z dalszą instrukcją. Sam przełącznik usuwa wyłącznie wymóg ograniczenia klientów do listy IP. Starszy kod, np. commit z przesłanego logu, nie obsługuje tej zmiennej.
+Pozostaw `NODE_ENV=production`, `ANDON_HOST=0.0.0.0` i `ANDON_ALLOWED_ORIGINS=https://andoninpost.onrender.com`. Uzupełnij również proxy i klucz zgodnie z dalszą instrukcją. Sam przełącznik usuwa wyłącznie wymóg ograniczenia klientów do listy IP. Obsługa publicznego testu i profilu proxy wymaga aktualnego kodu; commit `fe4537fe` z logu nie zawiera jeszcze profilu proxy `render`.
 
-Po testach ustaw `ANDON_PUBLIC_TEST_MODE=false`, uzupełnij `ANDON_ALLOWED_CLIENTS` i ponownie wdróż usługę. Bez listy IP aplikacja znowu odmówi startu w produkcji.
+Po testach ustaw `ANDON_PUBLIC_TEST_MODE=false`, uzupełnij `ANDON_ALLOWED_CLIENTS`, zastąp profil proxy `render` zweryfikowaną listą adresów proxy i ponownie wdróż usługę. Bez listy IP aplikacja znowu odmówi startu w produkcji.
+
+### Komplet ustawień dla publicznego testu
+
+Po wysłaniu nowego kodu na GitHub ustaw w Render → Environment:
+
+```dotenv
+NODE_ENV=production
+ANDON_HOST=0.0.0.0
+ANDON_ALLOWED_ORIGINS=https://andoninpost.onrender.com
+ANDON_PUBLIC_TEST_MODE=true
+ANDON_TRUST_PROXY=render
+```
+
+Usuń `ANDON_ALLOWED_CLIENTS` oraz `ANDON_TLS_CERT_FILE` i `ANDON_TLS_KEY_FILE`, jeśli były ustawione. HTTPS zapewnia Render. Nie ustawiaj ręcznie `RENDER` — platforma dostarcza tę zmienną. Istniejący webhook może pozostać.
+
+Dodaj również `ANDON_MASTER_KEY`. Jeśli test zaczyna się na pustych danych, wygeneruj nowy klucz lokalnie w PowerShell; poniższe polecenie kopiuje go do schowka:
+
+```powershell
+node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64'))" | Set-Clipboard
+```
+
+Wklej ze schowka do wartości `ANDON_MASTER_KEY` w Render. Nie wklejaj klucza do rozmowy ani repozytorium. Jeśli klucz jest już ustawiony lub przenosisz zaszyfrowane dane, zachowaj dotychczasowy klucz. Nie generuj go ponownie przy każdym wdrożeniu. Przy użyciu tej zmiennej usuń alternatywne `ANDON_MASTER_KEY_FILE`.
+
+W Settings pozostaw Start Command `node server.js` oraz puste Health Check Path (kontrola TCP). Jeśli używasz trwałego dysku, ustaw również trzy ścieżki z tabeli powyżej. Dla krótkiego testu bez trwałego dysku można pozostawić domyślne ścieżki; dane zostaną utracone przy restarcie lub wdrożeniu.
+
+Dopiero po uzupełnieniu wszystkich wartości wybierz Save, rebuild, and deploy (z nowym kodem). Docelowego wdrożenia nie wykonano w ramach lokalnych testów.
 
 ## Proxy i HTTPS
 
 Render kończy TLS przed aplikacją i przekazuje do procesu HTTP. Aplikacja uznaje nagłówek `X-Forwarded-Proto: https` tylko od skonfigurowanego zaufanego proxy. [Opis architektury Render](https://render.com/tutorials/web-service-vs-static-site/web-services).
 
-W sprawdzonej dokumentacji nie ustalono stałej listy adresów proxy odpowiedniej dla tej konkretnej usługi. Wartość `ANDON_TRUST_PROXY` trzeba potwierdzić na podstawie topologii usługi i informacji Render; nie należy wpisywać adresów wychodzących z zakładki Connect ani zgadywać całych prywatnych podsieci. Ta aplikacja przyjmuje listę adresów/CIDR, nie liczbę skoków `1`. Ustawienie `true` jest zabronione.
+Dla publicznego testu profil `ANDON_TRUST_PROXY=render` ufa tylko bezpośredniemu pośrednikowi (jeden skok w Express). Wymaga `RENDER=true`, trybu production i jawnego publicznego testu. Zmienna `RENDER` jest wskaźnikiem środowiska, nie dowodem autentyczności żądania; profil zakłada ruch przez proxy platformy i zaufanie do pozostałych usług z dostępem do portu w jej sieci prywatnej. [Zmienne Render](https://render.com/docs/environment-variables), [sieć prywatna Render](https://render.com/docs/private-network).
+
+Nie zakładamy, że prawy skrajny adres w `X-Forwarded-For` zawsze oznacza użytkownika: przy dodatkowych proxy limity i logi mogą grupować wielu użytkowników pod adresem pośrednika. Prefiks nagłówka podany przez klienta nie zmienia wybranego prawego adresu. Dlatego profil jest przeznaczony wyłącznie do publicznego testu i nie obsługuje autoryzacji na podstawie listy IP.
+
+Dla wdrożenia z ograniczeniem IP potrzebne są potwierdzone adresy proxy. W sprawdzonej dokumentacji nie ustalono stałej listy dla tej konkretnej usługi; nie należy wpisywać adresów wychodzących z zakładki Connect ani zgadywać całych prywatnych podsieci. Aplikacja przyjmuje listę adresów/CIDR albo specjalny profil `render`, nie tekstową liczbę skoków `1`. Ustawienie `true` pozostaje zabronione.
 
 Poprawne zaufanie do proxy jest konieczne zarówno dla HTTPS, jak i rozpoznania IP klienta. Nagłówki nie mogą pozwalać klientowi podszyć się pod dozwolony adres. [Express: konfiguracja proxy](https://expressjs.com/en/guide/behind-proxies/).
 
@@ -65,4 +95,4 @@ Alternatywnie do `ANDON_MASTER_KEY` można dodać Secret File `master.key` i ust
 3. Sprawdź ponowne połączenie po zmianie karty.
 4. Na danych testowych sprawdź zachowanie kont i historii po restarcie usługi.
 
-Przygotowanie tej instrukcji nie zmienia ustawień w Render ani nie wdraża projektu. Do zakończenia konfiguracji potrzebne są rzeczywiste wartości środowiska, w tym zweryfikowane zaufanie do proxy.
+Przygotowanie tej instrukcji nie zmienia ustawień w Render ani nie wdraża projektu. Publiczny test można skonfigurować powyższym kompletem zmiennych i właściwym kluczem. Wdrożenie z listą dozwolonych IP wymaga dodatkowo zweryfikowania adresów proxy.

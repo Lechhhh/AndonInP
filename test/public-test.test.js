@@ -4,6 +4,8 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),cryp
 const {io}=require('socket.io-client');
 const {configFrom}=require('../lib/config');
 const {createApplication}=require('../lib/server-app');
+const proxyaddr=require('proxy-addr');
+const express=require('express');
 function fixture(){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'andon-public-test-'));
  const env={NODE_ENV:'production',PORT:'0',ANDON_PUBLIC_TEST_MODE:'true',ANDON_TRUST_PROXY:'127.0.0.1/32',ANDON_ALLOWED_ORIGINS:'https://andon.example',ANDON_MASTER_KEY:crypto.randomBytes(32).toString('base64'),ANDON_DATA_DIR:path.join(root,'data'),ANDON_STATE_FILE:path.join(root,'state')};
@@ -21,8 +23,20 @@ test('Publiczny test wymaga jawnej zgody i zachowuje wymagania produkcyjne',()=>
  assert.throws(()=>configFrom({...env,ANDON_MASTER_KEY:''},root),/klucza/);
  assert.deepEqual(configFrom({...env,ANDON_PUBLIC_TEST_MODE:'false',ANDON_ALLOWED_CLIENTS:'203.0.113.10/32'},root).allowedClients,['203.0.113.10/32']);
 });
-test('Publiczny test wpuszcza różne IP, ale wymaga HTTPS, właściwego originu i logowania Socket.IO',async t=>{
- const {env}=fixture(),app=await createApplication(configFrom(env,path.resolve(__dirname,'..')));
+test('Proxy Render jest ograniczone do publicznego testu i nie ufa całemu łańcuchowi XFF',()=>{
+ const {root,env}=fixture(),renderEnv={...env,RENDER:'true',ANDON_TRUST_PROXY:'render'};
+ const config=configFrom(renderEnv,root);assert.equal(config.proxy,1);
+ for(const changes of [{RENDER:undefined},{RENDER:'false'},{NODE_ENV:'development'},{ANDON_PUBLIC_TEST_MODE:'false',ANDON_ALLOWED_CLIENTS:'203.0.113.10/32'},{ANDON_TLS_CERT_FILE:'cert.pem',ANDON_TLS_KEY_FILE:'key.pem'}]){
+  assert.throws(()=>configFrom({...renderEnv,...changes},root),/ANDON_TRUST_PROXY=render/);
+ }
+ const app=express();app.set('trust proxy',config.proxy);const trust=app.get('trust proxy fn');
+ const request=xff=>({socket:{remoteAddress:'10.0.0.2'},headers:{'x-forwarded-for':xff}});
+ assert.equal(proxyaddr(request('203.0.113.10'),trust),'203.0.113.10');
+ assert.equal(proxyaddr(request('198.51.100.77, 203.0.113.10'),trust),'203.0.113.10');
+ assert.equal(proxyaddr(request('198.51.100.88, 203.0.113.10, 10.0.0.3'),trust),'10.0.0.3');
+});
+for(const proxy of ['127.0.0.1/32','render'])test('Publiczny test ('+proxy+'): różne IP, wymagane HTTPS, origin i logowanie Socket.IO',async t=>{
+ const {env}=fixture(),app=await createApplication(configFrom({...env,RENDER:'true',ANDON_TRUST_PROXY:proxy},path.resolve(__dirname,'..')));
  t.after(()=>app.close());
  const address=await app.listen(),url='http://127.0.0.1:'+address.port;
  const headers={Origin:'https://andon.example','X-Forwarded-Proto':'https','X-Forwarded-For':'203.0.113.10'};
@@ -42,5 +56,15 @@ test('Publiczny test wpuszcza różne IP, ale wymaga HTTPS, właściwego originu
   socket.once('connect',()=>{clearTimeout(timer);reject(new Error('Anonimowy dostęp do TV'));});
   socket.once('connect_error',()=>{clearTimeout(timer);resolve();});
   socket.connect();
+ });
+ const loginResponse=await fetch(url+'/api/login',{method:'POST',headers:{...headers,Cookie:cookie,'Content-Type':'application/json','X-CSRF-Token':session.csrfToken},body:JSON.stringify({code:app.accounts.state.users[0].number})});
+ assert.equal(loginResponse.status,200);const loggedIn=await loginResponse.json();assert.equal(loggedIn.authenticated,true);
+ const authenticated=io(url,{autoConnect:false,reconnection:false,transports:['websocket'],extraHeaders:{...headers,Cookie:loginResponse.headers.get('set-cookie').split(';')[0]},auth:{view:'tv',csrfToken:loggedIn.csrfToken}});
+ t.after(()=>authenticated.disconnect());
+ await new Promise((resolve,reject)=>{
+  const timer=setTimeout(()=>{authenticated.disconnect();reject(new Error('Brak synchronizacji po logowaniu'));},3000);
+  authenticated.once('sync',state=>{clearTimeout(timer);try{assert(state.st);resolve();}catch(error){reject(error);}});
+  authenticated.once('connect_error',error=>{clearTimeout(timer);reject(error);});
+  authenticated.connect();
  });
 });

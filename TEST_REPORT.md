@@ -76,3 +76,10 @@
 - Nowe testy konfiguracji i izolowanego HTTP/Socket.IO sprawdzają różne IPv4/IPv6, Secure cookie, odmowę HTTP, obcego originu, logowania bez CSRF i anonimowego wejścia na TV. Sprawdzono powrót do konfiguracji z listą IP.
 - `npm test`: 69/69 poprawnych. `npm run security:check`: 15 publicznych plików. Kontrola składni konfiguracji i serwera poprawna.
 - Nie zmieniano ustawień Render ani nie wysyłano kodu do repozytorium. Wdrożenie wymaga nowego kodu oraz osobnego uzupełnienia proxy i klucza; instrukcja w `RENDER.md`. Zależności bez zmian.
+
+## Proxy dla publicznego testu Render — 15.09.2026
+
+- Dodano `ANDON_TRUST_PROXY=render`, dostępne tylko dla publicznego testu w trybie produkcyjnym przy `RENDER=true`, bez bezpośredniego TLS. W Express konfiguruje dokładnie jeden zaufany skok. Komunikat startowy wskazuje aktywny profil. Brak originu i brak proxy mają osobne komunikaty konfiguracji.
+- Testy potwierdzają odrzucenie profilu poza Render i przy wyłączeniu publicznego testu, pominięcie podrobionego prefiksu X-Forwarded-For, obsługę IPv4/IPv6, Secure cookie, odmowę HTTP i obcego originu, CSRF, odrzucenie anonimowego Socket.IO oraz poprawne logowanie i synchronizację TV. Scenariusze HTTP i WebSocket wykonano lokalnie na izolowanych danych z nagłówkami proxy.
+- `npm test`: 71/71 poprawnych. `security:check`: 15 plików publicznych, kontrola składni konfiguracji i serwera poprawna. Nie testowano jeszcze wdrożenia na rzeczywistym Render.
+- W instrukcji dodano pełny zestaw zmiennych i lokalne generowanie klucza dla pustych danych. Profil nie identyfikuje całego łańcucha proxy platformy; przy wielu pośrednikach limity mogą być współdzielone. Wdrożenie z listą dozwolonych IP nadal wymaga zweryfikowanych adresów proxy.
