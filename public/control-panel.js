@@ -250,7 +250,7 @@ $('person-form').addEventListener('submit', async event => {
     finally { button.disabled = false; }
 });
 
-for(const [id,max] of [['plan-hour',24],['plan-minute',60]]){const select=$(id);select.replaceChildren();for(let n=0;n<max;n++){const option=document.createElement('option');option.value=String(n).padStart(2,'0');option.textContent=option.value;select.append(option);}const compatibility=document.createElement('option');compatibility.value='';compatibility.textContent='';compatibility.hidden=true;compatibility.disabled=true;select.append(compatibility);select.value='00';}
+for(const [id,max] of [['plan-hour',24],['plan-minute',60]]){const select=$(id);select.replaceChildren();const compatibility=document.createElement('option');compatibility.value='';compatibility.textContent='';compatibility.hidden=true;compatibility.disabled=true;select.append(compatibility);for(let n=0;n<max;n++){const option=document.createElement('option');option.value=String(n).padStart(2,'0');option.textContent=option.value;select.append(option);}select.value='00';}
 HistoryPanel.init(request,()=>identity,message);
 
 $('toggle-break-overlay').addEventListener('click',event=>perform(event.currentTarget,async()=>{if(!state)return;await request('setBreakOverlayDisabled',{disabled:!state.breakOverlayDisabled});message('Zapisano ustawienie nakładki przerwy.');}));
