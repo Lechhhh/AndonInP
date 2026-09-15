@@ -63,7 +63,7 @@ socket.on('disconnect', reason => {
     if (identity && ['transport close', 'transport error', 'ping timeout'].includes(reason)) {
         state = null; resuming = true;
         $('stop-shift').disabled = true; $('start-shift').disabled = true;
-        document.querySelector('#settings-form button').disabled = true;
+        document.querySelector('#settings-form button').disabled=true;document.querySelector('#assembly-settings-form button').disabled=true;
         $('connection').textContent = 'Połączenie przerwane. Ponawiam łączenie — dane mogą być nieaktualne.';
         $('connection').hidden = false;
         return;
@@ -81,7 +81,7 @@ socket.on('sync', data => {
     if (!identity) return;
     $('connection').hidden = true;
     state = data; SupportSound.sync(data);
-    if (!initialized) { $('goal').value = data.goal; $('net-time').value = data.netShiftMins; initialized = true; }
+    if (!initialized) { $('goal').value=data.goal;$('net-time').value=data.netShiftMins;$('assembly-goal').value=data.assemblyGoal||data.goal;$('assembly-net-time').value=data.assemblyNetShiftMins||data.netShiftMins;initialized=true; }
     renderProduction();
     if (resuming) {
         resuming = false;
@@ -143,7 +143,7 @@ function renderProduction() {
     $('production-takt').textContent = Number(state.taktMins.toFixed(2)) + ' min';
     const end = state.shiftActive ? state.serverTime : state.shiftStopTime;
     $('shift-elapsed').textContent = duration(state.shiftStart ? Math.max(0, Math.floor((end - state.shiftStart) / 1000)) : 0);
-    $('stop-shift').disabled = !state.shiftActive;$('start-shift').disabled=state.shiftActive;document.querySelector('#settings-form button').disabled=state.shiftActive;
+    $('stop-shift').disabled = !state.shiftActive;$('start-shift').disabled=state.shiftActive;document.querySelector('#settings-form button').disabled=state.shiftActive;document.querySelector('#assembly-settings-form button').disabled=state.shiftActive;
     $('break-overlay-state').textContent = state.breakOverlayDisabled ? 'Nakładka wyłączona. Przerwy nadal są liczone.' : 'Nakładka włączona — pojawia się podczas przerwy.';
     $('toggle-break-overlay').textContent = state.breakOverlayDisabled ? 'Włącz nakładkę przerwy' : 'Wyłącz nakładkę przerwy';
     const signature = JSON.stringify(state.planner);
@@ -160,7 +160,10 @@ function renderProduction() {
 }
 setInterval(() => { if (identity && state) { renderProduction(); } }, 1000);
 $('settings-form').addEventListener('submit', event => { event.preventDefault(); perform(event.submitter, async () => {
-    await request('adminSettings', { goal: Number($('goal').value), time: Number($('net-time').value) }); message('Zapisano cel i czas pracy.');
+    await request('adminSettings', { goal:Number($('goal').value),time:Number($('net-time').value),department:'electro' });message('Zapisano parametry Elektromontażu.');
+}); });
+$('assembly-settings-form').addEventListener('submit', event => { event.preventDefault(); perform(event.submitter, async () => {
+    await request('adminSettings', { goal:Number($('assembly-goal').value),time:Number($('assembly-net-time').value),department:'assembly' });message('Zapisano parametry Montażu.');
 }); });
 $('planner-form').addEventListener('submit', event => { event.preventDefault(); perform(event.submitter, async () => {
     await request('plannerAdd', { date: $('plan-date').value, time:$('plan-hour').value+':'+$('plan-minute').value }); $('plan-hour').value='';$('plan-minute').value=''; message('Dodano termin rozpoczęcia zmiany.');
@@ -344,3 +347,6 @@ document.addEventListener('click', event => {
 });
 
 if (typeof AndonAuth.session === 'function') AndonAuth.session().then(result=>openWorkspace(result)).catch(()=>{});
+
+const backToMain=$('back-to-main');if(backToMain)backToMain.addEventListener('click',async event=>{event.preventDefault();try{await AndonAuth.logout();}catch{}socket.disconnect();location.replace('/');});
+window.addEventListener('pageshow',()=>{if(location.pathname!=='/'&&history.state&&history.state.returnHome)location.replace('/');});

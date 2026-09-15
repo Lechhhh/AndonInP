@@ -197,7 +197,7 @@ function setTheme(theme) {
                     const result=await AndonAuth.login(code);
                     if(currentDepartment==='management'){
                         if(!['owner','manager'].includes(result.role))throw new Error('Brak uprawnień do panelu sterowania.');
-                        location.replace(panelPath);return;
+                        history.replaceState({returnHome:true},'',location.href);location.replace(panelPath);return;
                     }
                     currentUser=station;currentUserName=result.userName;secondOperatorName=null;
                     const secondInput=document.getElementById('second-password-input');
