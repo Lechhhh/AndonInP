@@ -13,8 +13,8 @@ const AndonAuth = (() => {
         if (!preparePromise) preparePromise = http('/api/session').catch(error => { preparePromise = null; throw error; });
         return preparePromise;
     }
-    async function session() { preparePromise = null; return prepare(); }
-    async function login(code) { await session(); const result=await http('/api/login',{code}); preparePromise=null; return result; }
+    async function session() { return prepare(); }
+    async function login(code) { await prepare(); const result=await http('/api/login',{code}); preparePromise=null; return result; }
     async function verifyOperator(code) { return http('/api/co-login',{code}); }
     async function connect(socket, view) {
         socket.auth={view,csrfToken};

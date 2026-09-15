@@ -343,4 +343,4 @@ document.addEventListener('click', event => {
     });
 });
 
-AndonAuth.session().then(result=>openWorkspace(result)).catch(()=>{});
+if (typeof AndonAuth.session === 'function') AndonAuth.session().then(result=>openWorkspace(result)).catch(()=>{});
