@@ -91,6 +91,18 @@ socket.on('sync', data => {
 });
 socket.on('serviceError',result=>message(result.error,true));
 socket.on('usersChanged', () => { if (identity && identity.role === 'owner') loadUsers().catch(e => message(e.message, true)); });
+
+async function openWorkspace(result) {
+    if (!result || !result.authenticated || !['owner','manager'].includes(result.role)) return false;
+    identity = result;
+    $('identity').textContent = result.userName + ' · ' + result.roleName;
+    $('login-view').hidden = true; $('workspace').hidden = false;
+    $('people-tab').hidden = result.role !== 'owner'; $('audit-tab').hidden = result.role !== 'owner';
+    switchTab('production');
+    await AndonAuth.connect(socket,'panel');
+    if (result.role === 'owner') loadUsers().catch(error => message(error.message, true));
+    return true;
+}
 $('login-form').addEventListener('submit', async event => {
     event.preventDefault();
     const button = event.submitter; button.disabled = true; $('login-error').textContent = '';
@@ -330,3 +342,5 @@ document.addEventListener('click', event => {
         if (!wrapper.contains(event.target)) wrapper.querySelector('.panel-select-trigger').click();
     });
 });
+
+AndonAuth.session().then(result=>openWorkspace(result)).catch(()=>{});

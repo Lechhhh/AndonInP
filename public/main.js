@@ -209,18 +209,17 @@ function setTheme(theme) {
                 } catch(error){resetSession(error.message);}
                 finally{loginPending=false;if(button)button.disabled=false;}
             },
-            logout: ()=>{
+            logout: async()=>{
                 if(intentionalLogout)return;
                 intentionalLogout=true;
-                SupportSound.reset();
-                setConnected(true);
+                SupportSound.reset();setConnected(true);
                 if(connectionBanner)connectionBanner.classList.add('hidden');
                 document.querySelectorAll('.modal-overlay.show').forEach(modal=>modal.classList.remove('show'));
-                document.getElementById('view-tv').classList.add('hidden');
-                document.getElementById('view-op').classList.add('hidden');
-                document.getElementById('view-login').classList.remove('hidden');
-                void AndonAuth.logout().catch(()=>{}).finally(()=>socket.disconnect());
-                history.replaceState(null,'','/');
+                const loginButton=document.querySelector('[data-auth-login]');if(loginButton)loginButton.disabled=true;
+                try{await AndonAuth.logout();}catch{}finally{
+                    socket.disconnect();resetSession();history.replaceState(null,'','/');
+                    intentionalLogout=false;if(loginButton)loginButton.disabled=false;
+                }
             }
         };
 

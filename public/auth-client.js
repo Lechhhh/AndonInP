@@ -13,7 +13,8 @@ const AndonAuth = (() => {
         if (!preparePromise) preparePromise = http('/api/session').catch(error => { preparePromise = null; throw error; });
         return preparePromise;
     }
-    async function login(code) { await prepare(); return http('/api/login',{code}); }
+    async function session() { preparePromise = null; return prepare(); }
+    async function login(code) { await session(); const result=await http('/api/login',{code}); preparePromise=null; return result; }
     async function verifyOperator(code) { return http('/api/co-login',{code}); }
     async function connect(socket, view) {
         socket.auth={view,csrfToken};
@@ -24,8 +25,8 @@ const AndonAuth = (() => {
             socket.once('connect',success);socket.once('connect_error',failure);socket.connect();
         });
     }
-    async function logout(){try{if(csrfToken)await http('/api/logout',{});}finally{csrfToken=null;}}
+    async function logout(){try{if(csrfToken)await http('/api/logout',{});}finally{csrfToken=null;preparePromise=null;}}
     const requestId=()=>crypto.randomUUID();
     prepare().catch(() => {});
-    return {login,verifyOperator,connect,logout,requestId,prepare};
+    return {login,verifyOperator,connect,logout,requestId,prepare,session};
 })();
