@@ -18,7 +18,7 @@
         let localDB = null;
         let currentUser = null; 
         let currentUserName = null;
-        let loginPending = false;
+        let loginPending = false, intentionalLogout = false;
         let pendingOK = null, operatorCycleId = null, okAvailableAt = 0, okCooldownTimer;
         const OK_COOLDOWN_MS = 1500;
         const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -31,6 +31,7 @@
         const connectionBanner = document.getElementById('connection-banner');
         const setConnected = connected => connectionBanner && connectionBanner.classList.toggle('hidden', connected);
         socket.on('disconnect', reason => {
+            if (intentionalLogout) { setConnected(true); return; }
             if (currentUser && ['transport close', 'transport error', 'ping timeout'].includes(reason)) {
                 localDB = null; pendingOK = null;
                 document.getElementById('btn-ok').disabled = true;
@@ -43,6 +44,7 @@
             resetSession(error); setConnected(false);
         });
         socket.on('connect_error', error => {
+            if (intentionalLogout) return;
             setConnected(false);
             if (error.data?.code) {
                 resetSession('Sesja wygasła lub dostęp został zmieniony. Zaloguj się ponownie.');
@@ -187,7 +189,16 @@ function setTheme(theme) {
                 } catch(error){resetSession(error.message);}
                 finally{loginPending=false;if(button)button.disabled=false;}
             },
-            logout: async()=>{SupportSound.reset();try{await AndonAuth.logout();}catch{}socket.disconnect();location.reload();}
+            logout: async()=>{
+                if(intentionalLogout)return;
+                intentionalLogout=true;
+                SupportSound.reset();
+                setConnected(true);
+                document.querySelectorAll('.modal-overlay.show').forEach(modal=>modal.classList.remove('show'));
+                try{await AndonAuth.logout();}catch{}
+                socket.disconnect();
+                location.replace('/');
+            }
         };
 
         const Logic = {

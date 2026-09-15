@@ -107,3 +107,23 @@ footer{padding:clamp(18px,3vh,36px) var(--page-pad);text-align:center}
 @media(min-width:1800px){:root{--page-max:1900px}.columns{gap:clamp(22px,1.5vw,36px)}.card{padding:clamp(26px,1.7vw,42px)}th,td{padding:clamp(13px,.8vw,21px)}}
 @media(min-width:3000px){:root{--page-max:2800px;--page-pad:clamp(64px,5vw,180px);--ui-scale:clamp(18px,.42vw,30px)}.brand img{width:clamp(110px,4vw,190px)}.topbar{height:auto;min-height:130px}.tabs button{min-height:58px}.login{width:min(100%,760px)}input,select,button{min-height:56px}dialog{width:min(90vw,820px)}}
 @media(prefers-reduced-motion:reduce){.tab-page,.tab-page.tab-enter{opacity:1;transform:none;filter:none;transition:none}.tabs button::after{transition:none}}
+
+
+/* Spójne uprawnienia, checkboxy i przyciski anulowania */
+.confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-top:24px}
+.confirm-actions button{width:100%;min-height:46px;margin:0}
+.cancel-action,.danger{background:#441f25;border-color:#8f4048;color:#ffd2d7}
+.cancel-action:hover,.danger:hover{background:#5a262e;border-color:#b65360;color:#fff}
+.roles{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.roles>div{position:relative;min-width:0;padding:16px 18px;border:1px solid var(--border);border-left:1px solid var(--border);border-radius:12px;background:var(--card-strong);box-shadow:none}
+.roles>div::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--yellow)}
+.roles strong{display:block;font-size:14px;line-height:1.3;color:var(--text)}
+.roles span{font-size:12px;line-height:1.45;margin-top:6px}
+#person-dialog fieldset{display:grid;grid-template-columns:repeat(5,minmax(58px,1fr));gap:8px;padding:14px;margin-top:20px}
+#person-dialog fieldset .check{justify-content:center;min-height:46px;padding:9px 10px;margin:0;border:1px solid var(--border);border-radius:10px;background:var(--input);font-weight:700}
+#person-dialog fieldset .check:hover{border-color:color-mix(in srgb,var(--yellow) 55%,var(--border));background:rgba(255,204,0,.06)}
+#person-dialog fieldset .check:has(input:checked){border-color:var(--yellow);background:rgba(255,204,0,.09);color:var(--yellow)}
+#person-dialog>.check,#person-form>.check{width:max-content;min-width:180px;margin-top:16px;border:1px solid var(--border);background:var(--input)}
+.check input[type="checkbox"]{width:22px;height:22px;min-height:22px;border-radius:5px}
+@media(max-width:700px){.roles{grid-template-columns:1fr}.confirm-actions{grid-template-columns:1fr 1fr}#person-dialog fieldset{grid-template-columns:repeat(2,minmax(0,1fr))}#person-dialog fieldset .check:last-child{grid-column:1/-1}.confirm-actions button{min-height:48px}}
+@media(max-width:360px){.confirm-actions{grid-template-columns:1fr}.confirm-actions #confirm-cancel{grid-row:2}#person-dialog fieldset{grid-template-columns:1fr}#person-dialog fieldset .check:last-child{grid-column:auto}}
