@@ -46,7 +46,7 @@ Szyfrowanie nie usuwa historycznych jawnych kopii wykonanych poza aplikacją ani
 
 ## Konfiguracja firmowa — do wykonania przez IT
 
-Użyj `.env.example` jako wzoru. Produkcja odmawia startu bez originów HTTPS, listy dozwolonych adresów klientów, zewnętrznego klucza i TLS lub konkretnego zaufanego proxy.
+Użyj `.env.example` jako wzoru. Produkcja odmawia startu bez originów HTTPS, listy dozwolonych adresów klientów, zewnętrznego klucza i TLS lub konkretnego zaufanego proxy. Wyjątek dla jawnie uruchamianych publicznych testów: `ANDON_PUBLIC_TEST_MODE=true` z pustym `ANDON_ALLOWED_CLIENTS` dopuszcza dowolne IP, zachowując pozostałe wymagania. Tryb domyślnie wyłączony; szczegóły i powrót do ograniczenia IP opisuje `RENDER.md`.
 
 - Ustal domenę i certyfikat firmowy. Wariant preferowany: reverse proxy HTTPS na tym samym serwerze, Node na `127.0.0.1:3000`. Proxy musi obsługiwać WebSocket i nadpisywać nagłówki X-Forwarded-For/Proto. Do ANDON_TRUST_PROXY wpisz wyłącznie rzeczywiste adresy proxy; nie ufaj całej sieci użytkowników. Wariant alternatywny: certyfikat i klucz PEM w zmiennych ANDON_TLS_*; Node wymaga co najmniej TLS 1.2.
 - Ustaw `NODE_ENV=production`, `ANDON_ALLOWED_ORIGINS` i `ANDON_ALLOWED_CLIENTS` na rzeczywiste podsieci firmowe/VPN. Przykładowa podsieć w pliku konfiguracyjnym nie jest rozpoznaną siecią InPost. Firewall ma ograniczyć dostęp do serwera i uniemożliwić ominięcie proxy.

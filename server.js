@@ -11,6 +11,7 @@ async function main() {
     let address;try{address=await application.listen();}catch(error){await application.close();throw error;}
     console.log('[Andon] Serwer: ' + (config.directTls ? 'https' : 'http') + '://' + config.host + ':' + address.port);
     console.log('[Andon] Panel: ' + config.panelPath);
+    if (config.publicTestMode) console.log('[Andon] PUBLICZNY TEST: dostęp z dowolnego IP. Logowanie i uprawnienia pozostają wymagane.');
     if (!config.production) console.log('[Andon] Tryb lokalny. Firmowy dostęp wymaga konfiguracji HTTPS i ochrony klucza.');
     for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => application.close().then(() => process.exit(0)));
 }

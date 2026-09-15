@@ -69,3 +69,10 @@
 - Przeglądarka na izolowanych danych: wybór stanowiska klawiaturą, szary przycisk oczekiwania, dashboard przy 375×812, 1920×1080 i 3840×2160. Brak poziomego przepełnienia i błędów w sprawdzonej konsoli. Poprawiono opóźnienie widoczności listy, które uniemożliwiało natychmiastowe ustawienie fokusu klawiaturą.
 - Awaryjny sygnał przy błędzie MP3 sprawdzono z atrapą AudioContext: tony, głośność, brak powtarzania po synchronizacji, wyciszenie i ponowna próba MP3. Nie wykonano odsłuchu na fizycznych głośnikach ani próby pilota na telewizorze.
 - Nie zmieniano historycznych wyników przekraczających plan ani produkcyjnych danych. Nie restartowano produkcyjnego serwera. Zależności bez zmian i bez nowego audytu zależności. Szczegóły integracji w `SCALENIE_KOLEGI.md`.
+
+## Publiczny dostęp testowy — 15.09.2026
+
+- Na prośbę użytkownika dodano `ANDON_PUBLIC_TEST_MODE=true`: umożliwia pustą listę klientów w produkcji, zachowując logowanie, role, limity, HTTPS, originy i wymagania dotyczące klucza. Domyślnie wyłączony; sprzeczna konfiguracja z listą IP lub nieprawidłowa wartość przełącznika powoduje odmowę startu.
+- Nowe testy konfiguracji i izolowanego HTTP/Socket.IO sprawdzają różne IPv4/IPv6, Secure cookie, odmowę HTTP, obcego originu, logowania bez CSRF i anonimowego wejścia na TV. Sprawdzono powrót do konfiguracji z listą IP.
+- `npm test`: 69/69 poprawnych. `npm run security:check`: 15 publicznych plików. Kontrola składni konfiguracji i serwera poprawna.
+- Nie zmieniano ustawień Render ani nie wysyłano kodu do repozytorium. Wdrożenie wymaga nowego kodu oraz osobnego uzupełnienia proxy i klucza; instrukcja w `RENDER.md`. Zależności bez zmian.
