@@ -17,19 +17,20 @@
         }
         let localDB = null;
         let currentUser = null; 
-        let currentUserName = null;
+        let currentUserName = null, currentDepartment = 'electro', secondOperatorName = null, panelPath = '/panelsterowania';
         let loginPending = false, intentionalLogout = false;
         let pendingOK = null, operatorCycleId = null, okAvailableAt = 0, okCooldownTimer;
         const OK_COOLDOWN_MS = 1500;
         const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         fetch('/client-config').then(r => r.json()).then(config => {
-            document.querySelectorAll('.panel-link').forEach(link => { link.href = config.panelPath; link.classList.toggle('hidden', !config.showPanelLink); });
+            panelPath=config.panelPath||panelPath; document.querySelectorAll('.panel-link').forEach(link => { link.href = panelPath; link.classList.toggle('hidden', !config.showPanelLink); });
         }).catch(() => {});
         socket.on('sessionRevoked', result => { resetSession(result.error); socket.disconnect(); });
         const CFG = { stations: ['y0','y1','y2','y3','y4'] };
 
         const connectionBanner = document.getElementById('connection-banner');
-        const setConnected = connected => connectionBanner && connectionBanner.classList.toggle('hidden', connected);
+        let connectedOnce=false, disconnectTimer=null;
+        const setConnected = connected => { if(!connectionBanner)return; clearTimeout(disconnectTimer); if(connected){connectedOnce=true;connectionBanner.classList.add('hidden');return;} if(!connectedOnce||intentionalLogout){connectionBanner.classList.add('hidden');return;} disconnectTimer=setTimeout(()=>{if(!socket.connected&&!intentionalLogout)connectionBanner.classList.remove('hidden');},1800); };
         socket.on('disconnect', reason => {
             if (intentionalLogout) { setConnected(true); return; }
             if (currentUser && ['transport close', 'transport error', 'ping timeout'].includes(reason)) {
@@ -148,6 +149,18 @@ function setTheme(theme) {
         const initialTheme = localStorage.getItem('theme') || 'dark';
         setTheme(initialTheme);
 
+        const departmentStations={electro:[...AndonStations.departments.electro,'tv-electro'],assembly:[...AndonStations.departments.assembly,'tv-assembly']};
+        const stationOptions=document.getElementById('station-options'),stationInput=document.getElementById('station-select'),stationGroup=document.getElementById('station-group'),secondToggle=document.getElementById('second-operator-toggle'),secondGroup=document.getElementById('second-operator-group');
+        const stationIcon=id=>id.startsWith('tv-')?'tv':'precision_manufacturing';
+        const stationTitle=id=>id.startsWith('tv-')?'Dashboard '+(id==='tv-electro'?'Elektromontażu':'Montażu'):'Stanowisko '+AndonStations.label(id);
+        function updateSecondOperator(){const available=currentDepartment==='assembly'&&AndonStations.supportsSecond(stationInput.value);secondToggle.classList.toggle('hidden',!available||!secondGroup.classList.contains('hidden'));if(!available){secondGroup.classList.add('hidden');document.getElementById('second-password-input').value='';}}
+        function chooseStation(id,option){stationInput.value=id;document.querySelector('#custom-station-select .trigger-content span').textContent=stationTitle(id);document.querySelector('#custom-station-select .trigger-content i').textContent=stationIcon(id);stationOptions.querySelectorAll('.custom-option').forEach(el=>{el.classList.toggle('selected',el===option);el.setAttribute('aria-selected',String(el===option));});document.getElementById('custom-station-select').classList.remove('open');updateSecondOperator();}
+        function buildStations(department){currentDepartment=department;document.querySelectorAll('[data-department]').forEach(button=>button.classList.toggle('active',button.dataset.department===department));const management=department==='management';stationGroup.classList.toggle('hidden',management);secondToggle.classList.add('hidden');secondGroup.classList.add('hidden');if(management){stationInput.value='panel';document.getElementById('password-input').focus();return;}stationOptions.replaceChildren(...departmentStations[department].map((id,index)=>{const option=document.createElement('div');option.className='custom-option'+(index===0?' selected':'');option.role='option';option.tabIndex=-1;option.dataset.value=id;option.setAttribute('aria-selected',String(index===0));option.innerHTML=`<i class="material-icons opt-icon">${stationIcon(id)}</i><div class="opt-text"><span class="opt-title">${stationTitle(id)}</span><span class="opt-sub">${id.startsWith('tv-')?'Ekran informacyjny':department==='electro'?'Elektromontaż':'Montaż'}</span></div>`;option.addEventListener('click',()=>chooseStation(id,option));return option;}));const first=departmentStations[department][0];chooseStation(first,stationOptions.firstElementChild);}
+        document.querySelectorAll('[data-department]').forEach(button=>button.addEventListener('click',()=>buildStations(button.dataset.department)));
+        secondToggle.addEventListener('click',()=>{secondToggle.classList.add('hidden');secondGroup.classList.remove('hidden');document.getElementById('second-password-input').focus();});
+        document.getElementById('second-operator-remove').addEventListener('click',()=>{document.getElementById('second-password-input').value='';secondGroup.classList.add('hidden');updateSecondOperator();});
+        buildStations('electro');
+
         document.getElementById('password-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') { e.preventDefault(); Auth.login(); }
         });
@@ -182,9 +195,16 @@ function setTheme(theme) {
                 const button=document.querySelector('[data-event-click="0"]');if(button)button.disabled=true;
                 try {
                     const result=await AndonAuth.login(code);
-                    currentUser=station;currentUserName=result.userName;
-                    if(station==='tv'){UI.switch('view-tv');}
-                    else{document.getElementById('op-title').innerText=AndonStations.label(station);document.getElementById('op-user-name').innerText=currentUserName;UI.switch('view-op');}
+                    if(currentDepartment==='management'){
+                        if(!['owner','manager'].includes(result.role))throw new Error('Brak uprawnień do panelu sterowania.');
+                        location.replace(panelPath);return;
+                    }
+                    currentUser=station;currentUserName=result.userName;secondOperatorName=null;
+                    const secondInput=document.getElementById('second-password-input');
+                    const secondCode=secondInput?secondInput.value.trim():'';
+                    if(secondCode){if(secondCode===code)throw new Error('Drugi operator musi użyć innej karty.');const second=await AndonAuth.verifyOperator(secondCode);secondOperatorName=second.userName;}
+                    if(station.startsWith('tv-'))UI.switch('view-tv');
+                    else{document.getElementById('op-title').innerText=AndonStations.label(station);document.getElementById('op-user-name').innerText=[currentUserName,secondOperatorName].filter(Boolean).join(' + ');UI.switch('view-op');}
                     await AndonAuth.connect(socket,station);
                 } catch(error){resetSession(error.message);}
                 finally{loginPending=false;if(button)button.disabled=false;}

@@ -147,3 +147,6 @@ footer{padding:clamp(18px,3vh,36px) var(--page-pad);text-align:center}
 .panel-select-trigger:disabled{opacity:.55;cursor:not-allowed}
 #person-dialog{overflow:visible}#person-dialog form{overflow:visible}
 @media(max-width:700px){.panel-select-options{position:fixed;left:14px;right:14px;top:auto;bottom:14px;max-height:52dvh;border-radius:15px;padding:8px}.panel-select-option{min-height:48px}}
+
+/* Uprawnienia dla obu działów */
+#person-dialog{width:min(720px,94vw)}.station-access{display:grid!important;grid-template-columns:1fr 2fr!important;gap:16px!important}.station-access-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;align-content:start}.station-access-group>strong{grid-column:1/-1;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.station-access-group .check{justify-content:flex-start!important}@media(max-width:700px){.station-access{grid-template-columns:1fr!important}.station-access-group{grid-template-columns:repeat(3,minmax(0,1fr))}}

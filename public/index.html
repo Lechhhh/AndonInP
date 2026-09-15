@@ -23,50 +23,26 @@
 
     <img id="global-logo" src="logo.png" alt="InPost Logo">
 
-    <div id="connection-banner" class="connection-banner" role="status" aria-live="polite">Brak połączenia z serwerem - dane mogą być nieaktualne</div>
+    <div id="connection-banner" class="connection-banner hidden" role="status" aria-live="polite">Brak połączenia z serwerem - dane mogą być nieaktualne</div>
     <div id="teams-toast" role="status" aria-live="polite">
         <i class="material-icons" id="toast-icon">notifications_active</i>
         <div><div class="tt-text" id="toast-title">Powiadomienie</div><div class="tt-sub" id="toast-message"></div></div>
     </div>
 
     <div id="view-login">
-        <div class="login-panel">
+        <div class="login-panel login-panel-wide">
             <img src="logo.png" alt="InPost Logo" class="login-logo">
-            <h1>Andon System</h1>
-            <p>Logowanie pracownika</p>
-            
-            <div class="input-group">
-                <label>Wybierz stanowisko</label>
-                <div class="custom-select-wrapper" id="custom-station-select">
-                    <div class="custom-select-trigger" role="combobox" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-controls="station-options">
-                        <div class="trigger-content">
-                            <i class="material-icons opt-icon">precision_manufacturing</i>
-                            <span>Stanowisko X0</span>
-                        </div>
-                        <i class="material-icons arrow">expand_more</i>
-                    </div>
-                    <div class="custom-options" id="station-options" role="listbox">
-                        <div class="custom-option selected" role="option" aria-selected="true" tabindex="-1" data-value="y0"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X0</span><span class="opt-sub">Linia X</span></div></div>
-                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y1"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X1</span><span class="opt-sub">Linia X</span></div></div>
-                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y2"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X2</span><span class="opt-sub">Linia X</span></div></div>
-                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y3"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X3</span><span class="opt-sub">Linia X</span></div></div>
-                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="y4"><i class="material-icons opt-icon">precision_manufacturing</i><div class="opt-text"><span class="opt-title">Stanowisko X4</span><span class="opt-sub">Linia X</span></div></div>
-                        <div class="custom-option" role="option" aria-selected="false" tabindex="-1" data-value="tv"><i class="material-icons opt-icon inline-0">tv</i><div class="opt-text"><span class="opt-title">Główny Dashboard</span><span class="opt-sub">Ekran Informacyjny (TV)</span></div></div>
-                    </div>
-                </div>
-                <input type="hidden" id="station-select" value="y0">
+            <h1>Andon System</h1><p>Wybierz obszar i zeskanuj kartę</p>
+            <div class="department-picker" role="group" aria-label="Wybór obszaru">
+                <button type="button" class="department-card active" data-department="electro"><i class="material-icons">electrical_services</i><span>Elektromontaż</span></button>
+                <button type="button" class="department-card" data-department="assembly"><i class="material-icons">precision_manufacturing</i><span>Montaż</span></button>
+                <button type="button" class="department-card" data-department="management"><i class="material-icons">admin_panel_settings</i><span>Kadra zarządzająca</span></button>
             </div>
-
-            <div class="input-group inline-1">
-                <label for="password-input">Numer pracownika — kod dostępu</label>
-                <input type="password" id="password-input" class="inp-login" placeholder="Wpisz swój numer pracownika" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autofocus autocomplete="off">
-            </div>
-            
-            <button class="btn-action primary inline-2" data-event-click="0" data-auth-login>
-                ZALOGUJ SIĘ
-            </button>
-            <a class="panel-link hidden inline-3" href="/panelsterowania">Panel sterowania →</a>
-            <div id="l-msg" class="inline-4"></div>
+            <div class="input-group" id="station-group"><label>Wybierz stanowisko</label><div class="custom-select-wrapper" id="custom-station-select"><div class="custom-select-trigger" role="combobox" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-controls="station-options"><div class="trigger-content"><i class="material-icons opt-icon">precision_manufacturing</i><span>Stanowisko X0</span></div><i class="material-icons arrow">expand_more</i></div><div class="custom-options" id="station-options" role="listbox"></div></div><input type="hidden" id="station-select" value="y0"></div>
+            <div class="input-group"><label for="password-input">Numer pracownika</label><input type="password" id="password-input" class="inp-login" placeholder="Zeskanuj kartę" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autofocus autocomplete="off"></div>
+            <button type="button" id="second-operator-toggle" class="second-operator-toggle hidden"><i class="material-icons">person_add</i> Dodaj drugiego operatora</button>
+            <div class="input-group hidden" id="second-operator-group"><label for="second-password-input">Drugi operator</label><div class="second-operator-row"><input type="password" id="second-password-input" class="inp-login" placeholder="Zeskanuj drugą kartę" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autocomplete="off"><button type="button" id="second-operator-remove" aria-label="Usuń drugiego operatora">×</button></div></div>
+            <button class="btn-action primary" data-event-click="0" data-auth-login>ZALOGUJ SIĘ</button><div id="l-msg"></div>
         </div>
     </div>
 
