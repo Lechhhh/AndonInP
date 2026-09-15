@@ -64,7 +64,7 @@ socket.on('disconnect', reason => {
         state = null; resuming = true;
         $('stop-shift').disabled = true; $('start-shift').disabled = true;
         document.querySelector('#settings-form button').disabled = true;
-        $('connection').textContent = 'Połączenie przerwane. Ponawiam łączenie — dane mogą być nieaktualne.';
+        $('connection').textContent = 'Połączenie przerwane. Ponawiam łączenie - dane mogą być nieaktualne.';
         $('connection').hidden = false;
         return;
     }
@@ -103,7 +103,7 @@ $('login-form').addEventListener('submit', async event => {
         $('people-tab').hidden = result.role !== 'owner'; $('audit-tab').hidden = result.role !== 'owner';
         switchTab('production');
         await AndonAuth.connect(socket,'panel');
-        if (result.role === 'owner') await loadUsers();
+        if (result.role === 'owner') loadUsers().catch(error => message(error.message, true));
     } catch (error) { reset(error.message);socket.disconnect(); }
     finally { button.disabled = false; }
 });
@@ -132,7 +132,7 @@ function renderProduction() {
     const end = state.shiftActive ? state.serverTime : state.shiftStopTime;
     $('shift-elapsed').textContent = duration(state.shiftStart ? Math.max(0, Math.floor((end - state.shiftStart) / 1000)) : 0);
     $('stop-shift').disabled = !state.shiftActive;$('start-shift').disabled=state.shiftActive;document.querySelector('#settings-form button').disabled=state.shiftActive;
-    $('break-overlay-state').textContent = state.breakOverlayDisabled ? 'Nakładka wyłączona. Przerwy nadal są liczone.' : 'Nakładka włączona — pojawia się podczas przerwy.';
+    $('break-overlay-state').textContent = state.breakOverlayDisabled ? 'Nakładka wyłączona. Przerwy nadal są liczone.' : 'Nakładka włączona - pojawia się podczas przerwy.';
     $('toggle-break-overlay').textContent = state.breakOverlayDisabled ? 'Włącz nakładkę przerwy' : 'Wyłącz nakładkę przerwy';
     const signature = JSON.stringify(state.planner);
     if (signature === plannerSignature) return;
@@ -239,3 +239,14 @@ for(const [id,max] of [['plan-hour',24],['plan-minute',60]])for(let n=0;n<max;n+
 HistoryPanel.init(request,()=>identity,message);
 
 $('toggle-break-overlay').addEventListener('click',event=>perform(event.currentTarget,async()=>{if(!state)return;await request('setBreakOverlayDisabled',{disabled:!state.breakOverlayDisabled});message('Zapisano ustawienie nakładki przerwy.');}));
+
+
+document.addEventListener('click', event => {
+    const link = event.target.closest('a[href]');
+    if (!link || link.target === '_blank' || link.hasAttribute('download') || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const url = new URL(link.href, location.href);
+    if (url.origin !== location.origin || (url.pathname === location.pathname && url.hash)) return;
+    event.preventDefault();
+    document.body.classList.add('page-leaving');
+    setTimeout(() => { location.href = url.href; }, 150);
+});

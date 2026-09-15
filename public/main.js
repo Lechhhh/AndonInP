@@ -9,7 +9,7 @@
             socket = io({autoConnect:false,reconnection:true,reconnectionDelayMax:5000});
         } else {
             console.error('[Andon] Nie załadowano socket.io. Otwórz aplikację przez serwer Node (np. http://localhost:3000), a nie jako plik.');
-            socket = { on() {}, emit() {} }; // stub – interfejs logowania nadal działa
+            socket = { on() {}, emit() {} }; // stub - interfejs logowania nadal działa
             document.addEventListener('DOMContentLoaded', () => {
                 const m = document.getElementById('l-msg');
                 if (m) m.innerText = 'Brak połączenia z serwerem. Uruchom serwer (npm start) i otwórz http://localhost:3000';
@@ -316,7 +316,7 @@ function setTheme(theme) {
                 } else if(s.r) {
                     bOk.innerHTML = `OCZEKIWANIE...<div class='btn-sub'>Czekamy na zamknięcie cyklu na linii</div>`; bOk.disabled = true;
                 } else if(pendingOK || performance.now() < okAvailableAt) {
-                    bOk.innerHTML = `POTWIERDŹ OK<div class='btn-sub'>${pendingOK ? 'Zapisywanie potwierdzenia…' : 'Nowy cykl — poczekaj chwilę'}</div>`; bOk.disabled = true;
+                    bOk.innerHTML = `POTWIERDŹ OK<div class='btn-sub'>${pendingOK ? 'Zapisywanie potwierdzenia…' : 'Nowy cykl - poczekaj chwilę'}</div>`; bOk.disabled = true;
                 } else { 
                     bOk.innerHTML = `POTWIERDŹ OK<div class='btn-sub'>Zakończ cykl jako prawidłowy</div>`; bOk.disabled = false; 
                 }
@@ -399,7 +399,7 @@ function setTheme(theme) {
         function fmt(s) { return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
         function fmtHMS(s) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), x = s%60; return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${x.toString().padStart(2,'0')}`; }
 
-        // ===== Eksport pomiarów do .xlsx — czysty JS, bez bibliotek, działa offline =====
+        // ===== Eksport pomiarów do .xlsx - czysty JS, bez bibliotek, działa offline =====
         // Buduje prawidłowy plik OOXML jako nieskompresowany ZIP (metoda "stored") + CRC32.
         setInterval(() => { if(!document.getElementById('view-login').classList.contains('show') && document.getElementById('view-login').classList.contains('hidden')) Render.all(); }, 1000);
     
@@ -469,3 +469,14 @@ document.querySelectorAll('[data-event-click="26"]').forEach(el=>el.addEventList
 
 document.getElementById('dashboard-options').addEventListener('click',()=>modals.open('op-settings'));
 document.getElementById('modal-op-settings').addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();modals.close('op-settings');}});
+
+
+document.addEventListener('click', event => {
+    const link = event.target.closest('a[href]');
+    if (!link || link.target === '_blank' || link.hasAttribute('download') || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const url = new URL(link.href, location.href);
+    if (url.origin !== location.origin || (url.pathname === location.pathname && url.hash)) return;
+    event.preventDefault();
+    document.body.classList.add('page-leaving');
+    setTimeout(() => { location.href = url.href; }, 150);
+});

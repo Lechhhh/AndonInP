@@ -613,3 +613,8 @@ img,svg,canvas,video{max-width:100%}
 @media screen and (min-width:1800px){body:not(.role-tv){font-size:clamp(16px,.4vw + 10px,22px)}#view-login .login-card{width:min(90vw,680px)}}
 @media screen and (min-width:3000px){body{font-size:clamp(20px,.42vw,34px)}#view-login .login-card{width:min(90vw,900px)}.custom-select-trigger,.inp-login,.btn-action{min-height:clamp(62px,2.2vw,92px)}.modal-content,.settings-content{width:min(86vw,1500px)}}
 @media screen and (min-width:5000px){body.role-tv{--tv-edge:clamp(80px,3vw,240px)}#view-tv{padding:var(--tv-edge)}body.role-tv .kpi-val{font-size:clamp(7rem,3.1vw,15rem)}body.role-tv .tv-card-head{font-size:clamp(9rem,4.2vw,22rem)}}
+
+
+/* Płynne przejścia pomiędzy widokami */
+body{opacity:1;transition:opacity .15s ease,transform .15s cubic-bezier(.22,1,.36,1)}
+body.page-leaving{opacity:0;transform:translateY(4px);pointer-events:none}

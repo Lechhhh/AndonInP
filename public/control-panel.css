@@ -107,3 +107,12 @@ footer{padding:clamp(18px,3vh,36px) var(--page-pad);text-align:center}
 @media(min-width:1800px){:root{--page-max:1900px}.columns{gap:clamp(22px,1.5vw,36px)}.card{padding:clamp(26px,1.7vw,42px)}th,td{padding:clamp(13px,.8vw,21px)}}
 @media(min-width:3000px){:root{--page-max:2800px;--page-pad:clamp(64px,5vw,180px);--ui-scale:clamp(18px,.42vw,30px)}.brand img{width:clamp(110px,4vw,190px)}.topbar{height:auto;min-height:130px}.tabs button{min-height:58px}.login{width:min(100%,760px)}input,select,button{min-height:56px}dialog{width:min(90vw,820px)}}
 @media(prefers-reduced-motion:reduce){.tab-page,.tab-page.tab-enter{opacity:1;transform:none;filter:none;transition:none}.tabs button::after{transition:none}}
+
+
+/* Szybsze przejścia bez ciężkiego rozmycia */
+body{opacity:1;transition:opacity .15s ease,transform .15s cubic-bezier(.22,1,.36,1)}
+body.page-leaving{opacity:0;transform:translateY(4px);pointer-events:none}
+.tab-page{opacity:0;transform:translate3d(0,8px,0);filter:none;will-change:opacity,transform}
+.tab-page.tab-enter{opacity:1;transform:translate3d(0,0,0);filter:none;transition:opacity .24s ease-out,transform .3s cubic-bezier(.22,1,.36,1)}
+#workspace.view-ready{animation:workspaceIn .3s cubic-bezier(.22,1,.36,1) both}
+@keyframes workspaceIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
