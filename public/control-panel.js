@@ -5,6 +5,22 @@ const roleNames = { owner: 'Właściciel', manager: 'Brygadzista', employee: 'Pr
 let identity = null, state = null, users = [], usersVersion = null, editorVersion = null, initialized = false;
 let userPage=1,totalUsers=0;
 let plannerSignature = '', confirmResolve = null;
+
+function applyPanelTheme(theme) {
+    const selected = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', selected);
+    try { localStorage.setItem('theme', selected); } catch {}
+    const logo = document.querySelector('.brand img');
+    if (logo) logo.src = selected === 'light' ? '/logo.png' : '/logo2.png';
+    document.querySelectorAll('[data-panel-theme]').forEach(button => {
+        const active = button.dataset.panelTheme === selected;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+}
+document.querySelectorAll('[data-panel-theme]').forEach(button => button.addEventListener('click', () => applyPanelTheme(button.dataset.panelTheme)));
+applyPanelTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+
 let resuming = false;
 
 function request(event, data = null) {

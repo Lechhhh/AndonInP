@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Andon | Panel sterowania</title>
     <link rel="icon" href="/logo.png">
+    <script src="/theme.js"></script>
     <link rel="stylesheet" href="/control-panel.css">
     <script src="/socket.io/socket.io.js" defer></script>
     <script src="/exporter.js" defer></script>
@@ -16,7 +17,7 @@
 </head>
 <body>
     <div id="connection" hidden class="connection" role="status">Łączenie z serwerem…</div>
-    <header class="topbar"><a class="brand" href="/"><img src="/logo.png" alt="InPost"><span>ANDON <small>Panel sterowania</small></span></a><a class="back" href="/">← Stanowiska i dashboard</a></header>
+    <header class="topbar"><a class="brand" href="/"><img src="/logo2.png" alt="InPost"><span>ANDON <small>Panel sterowania</small></span></a><div class="topbar-actions"><div class="theme-switcher" aria-label="Motyw aplikacji"><button type="button" class="theme-button" data-panel-theme="dark" aria-label="Włącz ciemny motyw">Ciemny</button><button type="button" class="theme-button" data-panel-theme="light" aria-label="Włącz jasny motyw">Jasny</button></div><a class="back" href="/">← Stanowiska i dashboard</a></div></header>
     <main>
         <section id="login-view" class="login card">
             <span class="eyebrow">DOSTĘP DO ZARZĄDZANIA</span><h1>Panel sterowania</h1><p>Zaloguj się numerem pracownika. Panel jest dostępny dla Właściciela i Brygadzisty.</p>
