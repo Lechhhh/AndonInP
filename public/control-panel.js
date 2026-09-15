@@ -322,7 +322,21 @@ function enhanceSelect(select) {
         list.hidden = !opening;
         wrapper.classList.toggle('open', opening);
         trigger.setAttribute('aria-expanded', String(opening));
-        if (opening) (list.querySelector('.selected') || list.querySelector('button:not(:disabled)'))?.focus();
+        if (opening) {
+            const rect=trigger.getBoundingClientRect();
+            const maxHeight=Math.min(320,Math.max(180,window.innerHeight-32));
+            const spaceBelow=window.innerHeight-rect.bottom-12;
+            const openAbove=spaceBelow<220&&rect.top>spaceBelow;
+            list.style.position='fixed';
+            list.style.left=Math.max(12,rect.left)+'px';
+            list.style.width=Math.min(rect.width,window.innerWidth-24)+'px';
+            list.style.right='auto';
+            list.style.maxHeight=maxHeight+'px';
+            list.style.top=openAbove?'auto':Math.min(rect.bottom+7,window.innerHeight-190)+'px';
+            list.style.bottom=openAbove?(window.innerHeight-rect.top+7)+'px':'auto';
+            (list.querySelector('.selected') || list.querySelector('button:not(:disabled)'))?.scrollIntoView({block:'nearest'});
+            (list.querySelector('.selected') || list.querySelector('button:not(:disabled)'))?.focus();
+        } else list.removeAttribute('style');
     });
     wrapper.addEventListener('keydown', event => {
         if (event.key === 'Escape') { event.preventDefault(); close(true); return; }
@@ -358,3 +372,5 @@ finishPanelBoot();
 
 const backToMain=$('back-to-main');if(backToMain)backToMain.addEventListener('click',async event=>{event.preventDefault();try{await AndonAuth.logout();}catch{}socket.disconnect();location.replace('/');});
 window.addEventListener('pageshow',()=>{if(location.pathname!=='/'&&history.state&&history.state.returnHome)location.replace('/');});
+
+window.addEventListener('resize',()=>document.querySelectorAll('.panel-select.open .panel-select-trigger').forEach(button=>button.click()));

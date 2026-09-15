@@ -180,3 +180,23 @@ html.panel-booting body::before{content:"";visibility:visible;position:fixed;ins
 #planner-form .panel-select-option{min-height:42px!important;padding:9px 12px!important}
 #planner-list{position:relative;z-index:1;margin-top:24px}
 @media(max-width:1000px){#production>.columns{grid-template-columns:1fr!important}#production>.columns>.card{width:100%!important}}
+
+
+/* Uporządkowany układ sekcji produkcji */
+.production-layout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start;margin-bottom:20px}
+.production-layout>.card{height:auto!important;min-height:0!important;margin:0!important;align-self:start}
+.department-settings-card,.shift-control-card{padding:24px!important}
+.department-settings-card p,.shift-control-card p{min-height:44px;margin-bottom:18px}
+.department-settings-card form{display:grid;gap:8px}
+.department-settings-card form label{margin-top:8px}
+.department-settings-card form button{width:100%;margin-top:12px}
+.shift-control-card .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+.shift-control-card .actions button{width:100%;margin:0;white-space:nowrap}
+
+/* Listy rozwijane jako warstwa nad panelem, bez rozpychania i obcinania kart */
+.panel-select-options{z-index:5000!important;box-sizing:border-box!important;overflow-y:auto!important;overscroll-behavior:contain!important;background:var(--card)!important;border:1px solid var(--border)!important;box-shadow:0 18px 46px rgba(0,0,0,.55)!important}
+#planner-form .panel-select-options{top:auto;bottom:auto;transform:none;max-height:320px!important}
+#planner-form,.time-24,#production,.tab-page{overflow:visible!important}
+
+@media(max-width:1250px){.production-layout{grid-template-columns:1fr 1fr}.shift-control-card{grid-column:1/-1}.shift-control-card p{min-height:0}.shift-control-card .actions{grid-template-columns:repeat(2,minmax(180px,260px))}}
+@media(max-width:760px){.production-layout{grid-template-columns:1fr}.shift-control-card{grid-column:auto}.department-settings-card p{min-height:0}.shift-control-card .actions{grid-template-columns:1fr}.production-layout>.card{width:100%}}
