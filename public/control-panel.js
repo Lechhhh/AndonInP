@@ -110,7 +110,14 @@ $('login-form').addEventListener('submit', async event => {
 $('logout').addEventListener('click', async () => { try { await AndonAuth.logout(); } catch { /* Serwer dodatkowo ogranicza ważność sesji. */ } finally { reset(); socket.disconnect(); } });
 function switchTab(id) {
     if (['people','audit'].includes(id) && (!identity || identity.role !== 'owner')) return;
-    document.querySelectorAll('.tab-page').forEach(el => { el.hidden = el.id !== id; });
+    const next = document.getElementById(id);
+    if (!next || (!next.hidden && next.classList.contains('tab-enter'))) return;
+    document.querySelectorAll('.tab-page').forEach(el => {
+        el.classList.remove('tab-enter');
+        el.hidden = el.id !== id;
+    });
+    next.hidden = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('tab-enter')));
     if(id==='reports')HistoryPanel.open();
     document.querySelectorAll('[data-tab]').forEach(button => { const selected = button.dataset.tab === id; button.classList.toggle('selected', selected); if (selected) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current'); });
 }

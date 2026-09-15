@@ -596,3 +596,20 @@
 #view-login .panel-link:active{transform:translateY(0) scale(.985)}
 #view-login .panel-link:focus-visible{outline:3px solid var(--col-yellow);outline-offset:3px}
 body.light-theme #view-login .panel-link{color:#181818;background:rgba(255,204,0,.72);border-color:#d7ad00}
+
+
+/* Skalowanie całego Andona na telefony, tablety, monitory i telewizory */
+html{min-width:320px}body{overflow-x:hidden}
+img,svg,canvas,video{max-width:100%}
+#view-login,#view-tv,#view-operator{max-width:100%;overflow-x:hidden}
+#view-login .login-card{width:min(calc(100% - 28px),520px)}
+@media screen and (max-width:700px){
+ #view-login{min-height:100dvh;padding:24px 14px}.login-card{margin:auto!important;padding:24px 18px!important}
+ #view-login .panel-link{width:100%;max-width:100%;min-height:48px}
+ .custom-select-trigger,.inp-login,.btn-action{min-height:52px}
+ .modal-content,.settings-content{width:min(100% - 20px,680px)!important;max-height:90dvh;overflow:auto}
+}
+@media screen and (max-width:390px){#view-login{padding-inline:10px}.login-card{padding-inline:14px!important}.title-main{overflow-wrap:anywhere}}
+@media screen and (min-width:1800px){body:not(.role-tv){font-size:clamp(16px,.4vw + 10px,22px)}#view-login .login-card{width:min(90vw,680px)}}
+@media screen and (min-width:3000px){body{font-size:clamp(20px,.42vw,34px)}#view-login .login-card{width:min(90vw,900px)}.custom-select-trigger,.inp-login,.btn-action{min-height:clamp(62px,2.2vw,92px)}.modal-content,.settings-content{width:min(86vw,1500px)}}
+@media screen and (min-width:5000px){body.role-tv{--tv-edge:clamp(80px,3vw,240px)}#view-tv{padding:var(--tv-edge)}body.role-tv .kpi-val{font-size:clamp(7rem,3.1vw,15rem)}body.role-tv .tv-card-head{font-size:clamp(9rem,4.2vw,22rem)}}
