@@ -239,3 +239,94 @@ for(const [id,max] of [['plan-hour',24],['plan-minute',60]])for(let n=0;n<max;n+
 HistoryPanel.init(request,()=>identity,message);
 
 $('toggle-break-overlay').addEventListener('click',event=>perform(event.currentTarget,async()=>{if(!state)return;await request('setBreakOverlayDisabled',{disabled:!state.breakOverlayDisabled});message('Zapisano ustawienie nakładki przerwy.');}));
+
+
+function enhanceSelect(select) {
+    if (!select || select.dataset.enhanced === 'true') return;
+    select.dataset.enhanced = 'true';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'panel-select';
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'panel-select-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    const value = document.createElement('span');
+    const arrow = document.createElement('span');
+    arrow.className = 'panel-select-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '⌄';
+    const list = document.createElement('div');
+    list.className = 'panel-select-options';
+    list.setAttribute('role', 'listbox');
+    list.hidden = true;
+    trigger.append(value, arrow);
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.append(select, trigger, list);
+
+    const close = focusTrigger => {
+        list.hidden = true;
+        wrapper.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+        if (focusTrigger) trigger.focus();
+    };
+    const sync = () => {
+        const selected = select.options[select.selectedIndex];
+        value.textContent = selected ? selected.textContent : '';
+        [...list.children].forEach((option, index) => {
+            const active = index === select.selectedIndex;
+            option.classList.toggle('selected', active);
+            option.setAttribute('aria-selected', String(active));
+        });
+        trigger.disabled = select.disabled;
+    };
+    const build = () => {
+        list.replaceChildren(...[...select.options].map((nativeOption, index) => {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'panel-select-option';
+            option.setAttribute('role', 'option');
+            option.textContent = nativeOption.textContent;
+            option.disabled = nativeOption.disabled;
+            option.addEventListener('click', () => {
+                select.selectedIndex = index;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                sync();
+                close(true);
+            });
+            return option;
+        }));
+        sync();
+    };
+    trigger.addEventListener('click', () => {
+        if (select.disabled) return;
+        const opening = list.hidden;
+        document.querySelectorAll('.panel-select.open').forEach(other => {
+            if (other !== wrapper) other.querySelector('.panel-select-trigger').click();
+        });
+        list.hidden = !opening;
+        wrapper.classList.toggle('open', opening);
+        trigger.setAttribute('aria-expanded', String(opening));
+        if (opening) (list.querySelector('.selected') || list.querySelector('button:not(:disabled)'))?.focus();
+    });
+    wrapper.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { event.preventDefault(); close(true); return; }
+        const options = [...list.querySelectorAll('button:not(:disabled)')];
+        const current = options.indexOf(document.activeElement);
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (list.hidden) trigger.click();
+            else options[(current + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length]?.focus();
+        }
+    });
+    select.addEventListener('change', sync);
+    new MutationObserver(build).observe(select, { childList: true, subtree: true, attributes: true });
+    build();
+}
+function enhancePanelSelects() { document.querySelectorAll('select').forEach(enhanceSelect); }
+enhancePanelSelects();
+document.addEventListener('click', event => {
+    document.querySelectorAll('.panel-select.open').forEach(wrapper => {
+        if (!wrapper.contains(event.target)) wrapper.querySelector('.panel-select-trigger').click();
+    });
+});
